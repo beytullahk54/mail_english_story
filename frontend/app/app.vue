@@ -79,6 +79,7 @@ const selectedLevel = ref(null);
 const levels = ref(['A1', 'A2', 'B1', 'B2']);
 const loading = ref(false);
 const toast = useToast();
+const config = useRuntimeConfig();
 
 const subscribe = async () => {
   if (!email.value) return;
@@ -86,7 +87,7 @@ const subscribe = async () => {
   loading.value = true;
   
   try {
-    const response = await $fetch('http://localhost:8000/api/v1/subscribe', {
+    const response = await $fetch(`${config.public.apiBase}/api/v1/subscribe`, {
       method: 'POST',
       body: {
         email: email.value,
@@ -325,6 +326,14 @@ const subscribe = async () => {
 }
 
 @media (max-width: 640px) {
+  .input-group {
+    flex-direction: column;
+  }
+
+  :deep(.level-select) {
+    width: 100%;
+  }
+
   .hero {
     padding: 2rem 1.5rem;
   }

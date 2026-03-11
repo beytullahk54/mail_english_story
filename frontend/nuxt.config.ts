@@ -16,4 +16,9 @@ export default defineNuxtConfig({
       },
     },
   },
+  runtimeConfig: {
+    public: {
+      apiBase: '' // Default value, will be overridden by NUXT_PUBLIC_API_BASE
+    }
+  }
 });

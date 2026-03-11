@@ -27,7 +27,7 @@ func (h *SubscriberHandler) Subscribe(c *fiber.Ctx) error {
 
 	if input.Email == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Email is required",
+			"error": "Email Zorunludur",
 		})
 	}
 
@@ -35,15 +35,15 @@ func (h *SubscriberHandler) Subscribe(c *fiber.Ctx) error {
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value") {
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-				"error": "Email already subscribed",
+				"error": "Email zaten kayıtlı",
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Could not subscribe user: " + err.Error(),
+			"error": "Kayıt başarısız: " + err.Error(),
 		})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "Successfully subscribed!",
+		"message": "Başarıyla kayıt olundu!",
 	})
 }
