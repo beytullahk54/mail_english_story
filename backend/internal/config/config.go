@@ -26,10 +26,19 @@ func LoadConfig() Config {
 
 	serverPort := os.Getenv("SERVER_PORT")
 	if serverPort == "" {
-		serverPort = os.Getenv("PORT") // Railway uses PORT
+		serverPort = os.Getenv("PORT") // Railway standard
 	}
 	if serverPort == "" {
-		serverPort = "8000" // Default
+		serverPort = "8000"
+	}
+
+	// Railway ve diğer platformlarda farklı isimlerle gelebilir
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = os.Getenv("POSTGRES_URL")
+	}
+	if dbURL == "" {
+		dbURL = os.Getenv("DATABASE_PRIVATE_URL")
 	}
 
 	return Config{
@@ -38,7 +47,7 @@ func LoadConfig() Config {
 		DBHost:      os.Getenv("DB_HOST"),
 		DBPort:      os.Getenv("DB_PORT"),
 		DBName:      os.Getenv("DB_NAME"),
-		DatabaseURL: os.Getenv("DATABASE_URL"),
+		DatabaseURL: dbURL,
 		ServerPort:  serverPort,
 	}
 }
