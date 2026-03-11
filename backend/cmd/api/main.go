@@ -38,6 +38,13 @@ func main() {
 	subscriberRoutes := v1.Group("/subscribe")
 	subscriberRoutes.Post("/", subscriberHand.Subscribe)
 
+	// Health Check
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status": "ok",
+		})
+	})
+
 	log.Printf("Starting server on port %s...", cfg.ServerPort)
 	err := app.Listen(":" + cfg.ServerPort)
 	if err != nil {
