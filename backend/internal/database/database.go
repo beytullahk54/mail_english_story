@@ -12,8 +12,11 @@ import (
 var DB *pgxpool.Pool
 
 func ConnectDB(cfg config.Config) {
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
+	dsn := cfg.DatabaseURL
+	if dsn == "" {
+		dsn = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+			cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
+	}
 
 	poolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
