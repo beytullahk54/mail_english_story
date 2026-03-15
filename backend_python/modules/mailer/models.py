@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 
@@ -6,10 +6,12 @@ class SendStoryRequest(BaseModel):
     story: str
     topic: str
     level: str
-    level_filter: Optional[str] = None  # Sadece belirli seviyeye gönder, None = herkese
+    language: str = "English"
+    level_filter: Optional[str] = None
+    language_filter: Optional[str] = None
 
 
 class SendStoryResponse(BaseModel):
     sent: int
     failed: int
-    recipients: list[str]
+    recipients: List[str]
