@@ -87,14 +87,18 @@ class MailerService:
     def send_story(self, request: SendStoryRequest):
         print(f"\n--- MAIL GÖNDERİMİ BAŞLADI: {request.topic} ---")
         
-        # 1. Eğer hikaye boşsa AI'dan üret
+        # 1. Konu ve Hikaye temizliği
+        current_topic = request.topic.strip()
+        if not current_topic or current_topic == "string":
+            current_topic = "Travel" # Varsayılan konu seyahat olsun
+            
         current_story = request.story.strip()
         if not current_story or current_story == "string":
-            print(f"Hikaye boş, AI üretimi başlatılıyor: {request.topic} ({request.level})")
+            print(f"Hikaye boş, AI üretimi başlatılıyor: {current_topic} ({request.level})")
             story_req = StoryRequest(
-                topic=request.topic,
+                topic=current_topic,
                 level=request.level if request.level in ["beginner", "intermediate", "advanced"] else "beginner",
-                word_count=200 # Varsayılan uzunluk
+                word_count=200 
             )
             generated = self.story_service.generate_story(story_req)
             current_story = generated.story
@@ -103,8 +107,8 @@ class MailerService:
         emails = self._get_subscribers(request.level_filter)
         
         print(f"Gönderilecek Toplam Email Sayısı: {len(emails)}")
-        subject = f"📖 Your English Story: {request.topic}"
-        html = build_email_html(request.topic, request.level, current_story)
+        subject = f"📖 Your English Story: {current_topic}"
+        html = build_email_html(current_topic, request.level, current_story)
 
         sent, failed, recipients = 0, 0, []
 
