@@ -1,7 +1,5 @@
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-
+import requests
+import json
 from sqlalchemy.orm import Session
 
 from config import config
@@ -50,29 +48,41 @@ class MailerService:
         return emails
 
     def _send_one(self, to_email: str, subject: str, html: str) -> None:
-        print(f"   --> {to_email} adresine gönderiliyor...")
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"{config.MAIL_FROM_NAME} <{config.SMTP_USER}>"
-        msg["To"] = to_email
-        msg.attach(MIMEText(html, "html"))
+        print(f"   --> {to_email} adresine Brevo API ile gönderiliyor...")
+        
+        url = "https://api.brevo.com/v3/smtp/email"
+        
+        payload = {
+            "sender": {
+                "name": config.MAIL_FROM_NAME,
+                "email": config.SMTP_USER
+            },
+            "to": [
+                {
+                    "email": to_email
+                }
+            ],
+            "subject": subject,
+            "htmlContent": html
+        }
+        
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "api-key": config.SMTP_PASSWORD # Artık .env'deki SMTP_PASSWORD'ü API Key olarak kullanıyoruz
+        }
 
         try:
-            # Port 465 ise doğrudan SSL, değilse (587 vb) STARTTLS kullanıyoruz
-            if int(config.SMTP_PORT) == 465:
-                server_class = smtplib.SMTP_SSL
+            response = requests.post(url, json=payload, headers=headers)
+            if response.status_code in [201, 202, 200]:
+                print(f"   [BAŞARILI] {to_email}")
             else:
-                server_class = smtplib.SMTP
-
-            with server_class(config.SMTP_HOST, config.SMTP_PORT) as server:
-                if int(config.SMTP_PORT) != 465:
-                    server.starttls()
-                server.login(config.SMTP_USER, config.SMTP_PASSWORD)
-                server.sendmail(config.SMTP_USER, to_email, msg.as_string())
-            print(f"   [BAŞARILI] {to_email}")
+                print(f"   [HATA] {to_email} Hata Kodu: {response.status_code}")
+                print(f"   Detay: {response.text}")
+                raise Exception(f"Brevo API Hatası: {response.text}")
         except Exception as e:
-            print(f"   [HATA] {to_email} gönderilemedi! Hata: {str(e)}")
-            raise e # Üst fonksiyona hatayı fırlat ki failed sayacı artsın
+            print(f"   [KRİTİK HATA] {to_email} gönderilemedi: {str(e)}")
+            raise e
 
     def send_story(self, request: SendStoryRequest):
         print(f"\n--- MAIL GÖNDERİMİ BAŞLADI: {request.topic} ---")
