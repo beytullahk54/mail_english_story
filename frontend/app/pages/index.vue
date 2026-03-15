@@ -120,7 +120,8 @@ const translations = {
     successSummary: 'Harika!',
     successDetail: (lvl) => `${lvl || 'Herhangi bir'} seviyesi için bültene başarıyla abone oldunuz.`,
     errorSummary: 'Hata',
-    errorDetail: 'Abonelik işlemi sırasında bir hata oluştu.'
+    errorDetail: 'Abonelik işlemi sırasında bir hata oluştu.',
+    validationError: 'Lütfen bir dil ve seviye seçiniz.'
   },
   'English': {
     title: 'A New <span class="glow-text">English Story</span> Every Day',
@@ -135,7 +136,8 @@ const translations = {
     successSummary: 'Awesome!',
     successDetail: (lvl) => `Successfully subscribed to the newsletter for ${lvl || 'any'} level.`,
     errorSummary: 'Error',
-    errorDetail: 'An error occurred during subscription.'
+    errorDetail: 'An error occurred during subscription.',
+    validationError: 'Please select a language and level.'
   },
   'Deutsch': {
     title: 'Jeden Tag eine neue <span class="glow-text">deutsche Geschichte</span>',
@@ -150,7 +152,8 @@ const translations = {
     successSummary: 'Großartig!',
     successDetail: (lvl) => `Erfolgreich für den Newsletter auf ${lvl || 'beliebigem'} Niveau angemeldet.`,
     errorSummary: 'Fehler',
-    errorDetail: 'Ein Fehler ist beim Abonnement aufgetreten.'
+    errorDetail: 'Ein Fehler ist beim Abonnement aufgetreten.',
+    validationError: 'Bitte wählen Sie eine Sprache und ein Niveau.'
   },
   'Español': {
     title: 'Una nueva <span class="glow-text">historia en español</span> cada día',
@@ -165,7 +168,8 @@ const translations = {
     successSummary: '¡Genial!',
     successDetail: (lvl) => `Suscrito con éxito al boletín para el nivel ${lvl || 'cualquiera'}.`,
     errorSummary: 'Error',
-    errorDetail: 'Ocurrió un error durante la suscripción.'
+    errorDetail: 'Ocurrió un error durante la suscripción.',
+    validationError: 'Por favor, selecciona un idioma y un nivel.'
   },
   'Malay': {
     title: 'Cerita <span class="glow-text">Bahasa Inggeris</span> Baru Setiap Hari',
@@ -180,7 +184,8 @@ const translations = {
     successSummary: 'Hebat!',
     successDetail: (lvl) => `Berjaya melanggan buletin untuk tahap ${lvl || 'sebarang'}.`,
     errorSummary: 'Ralat',
-    errorDetail: 'Ralat berlaku semasa langganan.'
+    errorDetail: 'Ralat berlaku semasa langganan.',
+    validationError: 'Sila pilih bahasa dan tahap.'
   },
   'Swedish': {
     title: 'En ny <span class="glow-text">engelsk berättelse</span> varje dag',
@@ -195,7 +200,8 @@ const translations = {
     successSummary: 'Grymt!',
     successDetail: (lvl) => `Prenumerationen på nyhetsbrevet för nivån ${lvl || 'valfri'} lyckades.`,
     errorSummary: 'Fel',
-    errorDetail: 'Ett fel uppstod vid prenumerationen.'
+    errorDetail: 'Ett fel uppstod vid prenumerationen.',
+    validationError: 'Välj ett språk och en nivå.'
   },
   'Dutch': {
     title: 'Elke dag een nieuw <span class="glow-text">Engels verhaal</span>',
@@ -210,7 +216,8 @@ const translations = {
     successSummary: 'Geweldig!',
     successDetail: (lvl) => `Succesvol geabonneerd op de nieuwsbrief voor niveau ${lvl || 'elk'}.`,
     errorSummary: 'Fout',
-    errorDetail: 'Er is een fout opgetreden tijdens het abonneren.'
+    errorDetail: 'Er is een fout opgetreden tijdens het abonneren.',
+    validationError: 'Selecteer een taal en niveau.'
   },
   'Danish': {
     title: 'En ny <span class="glow-text">engelsk historie</span> hver dag',
@@ -225,7 +232,8 @@ const translations = {
     successSummary: 'Fantastisk!',
     successDetail: (lvl) => `Tilmelding til nyhedsbrevet for niveau ${lvl || 'vilkårligt'} lykkedes.`,
     errorSummary: 'Fejl',
-    errorDetail: 'Der opstod en fejl under tilmeldingen.'
+    errorDetail: 'Der opstod en fejl under tilmeldingen.',
+    validationError: 'Vælg venligst et sprog og et niveau.'
   }
 };
 
@@ -260,7 +268,15 @@ onMounted(() => {
 });
 
 const subscribe = async () => {
-  if (!email.value) return;
+  if (!email.value || !selectedLanguage.value || !selectedLevel.value) {
+    toast.add({
+      severity: 'warn',
+      summary: t('errorSummary'),
+      detail: t('validationError'),
+      life: 4000
+    });
+    return;
+  }
 
   loading.value = true;
 
