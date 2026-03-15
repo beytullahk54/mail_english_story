@@ -6,10 +6,9 @@ from database import get_db
 from .models import SubscriberInput
 from .service import SubscriberService
 
-router = APIRouter(prefix="/subscribe", tags=["subscriber"])
+router = APIRouter(tags=["subscriber"])
 
-
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/subscribe", status_code=status.HTTP_201_CREATED)
 def subscribe(input: SubscriberInput, db: Session = Depends(get_db)):
     if not input.email:
         raise HTTPException(
