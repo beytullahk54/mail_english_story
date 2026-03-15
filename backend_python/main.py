@@ -11,7 +11,7 @@ from modules.mailer.router import router as mailer_router
 # Auto migrate: create tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(redirect_slashes=False)
 
 app.add_middleware(
     CORSMiddleware,
