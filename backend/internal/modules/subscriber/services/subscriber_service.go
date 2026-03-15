@@ -3,8 +3,9 @@ package services
 import (
 	"context"
 
+	"gorm.io/gorm"
+
 	"github.com/kodlooper/mail_english_story_backend/internal/modules/subscriber/models"
-	"github.com/kodlooper/mail_english_story_backend/internal/modules/subscriber/repositories"
 )
 
 type SubscriberService interface {
@@ -12,14 +13,17 @@ type SubscriberService interface {
 }
 
 type subscriberService struct {
-	repo repositories.SubscriberRepository
+	db *gorm.DB
 }
 
-func NewSubscriberService(repo repositories.SubscriberRepository) SubscriberService {
-	return &subscriberService{repo: repo}
+func NewSubscriberService(db *gorm.DB) SubscriberService {
+	return &subscriberService{db: db}
 }
 
 func (s *subscriberService) SubscribeUser(ctx context.Context, input models.SubscriberInput) error {
-	// Add business logic if necessary, e.g. validate email format.
-	return s.repo.CreateSubscriber(ctx, input)
+	subscriber := models.Subscriber{
+		Email: input.Email,
+		Level: input.Level,
+	}
+	return s.db.WithContext(ctx).Create(&subscriber).Error
 }

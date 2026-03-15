@@ -8,9 +8,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/kodlooper/mail_english_story_backend/internal/config"
 	"github.com/kodlooper/mail_english_story_backend/internal/database"
+	subscriberModels "github.com/kodlooper/mail_english_story_backend/internal/modules/subscriber/models"
 
 	subscriberHandlers "github.com/kodlooper/mail_english_story_backend/internal/modules/subscriber/handlers"
-	subscriberRepositories "github.com/kodlooper/mail_english_story_backend/internal/modules/subscriber/repositories"
 	subscriberServices "github.com/kodlooper/mail_english_story_backend/internal/modules/subscriber/services"
 )
 
@@ -19,15 +19,19 @@ func main() {
 	cfg := config.LoadConfig()
 	database.ConnectDB(cfg)
 
+	// Auto migrate models
+	if err := database.DB.AutoMigrate(&subscriberModels.Subscriber{}); err != nil {
+		log.Fatalf("AutoMigrate failed: %v", err)
+	}
+
 	app := fiber.New()
 
 	// Middleware
 	app.Use(logger.New())
 	app.Use(cors.New()) // Allow frontend to call the API
 
-	// Setup dependencies (Repository -> Service -> Handler)
-	subscriberRepo := subscriberRepositories.NewSubscriberRepository(database.DB)
-	subscriberServ := subscriberServices.NewSubscriberService(subscriberRepo)
+	// Setup dependencies (Service -> Handler)
+	subscriberServ := subscriberServices.NewSubscriberService(database.DB)
 	subscriberHand := subscriberHandlers.NewSubscriberHandler(subscriberServ)
 
 	// Routing Module

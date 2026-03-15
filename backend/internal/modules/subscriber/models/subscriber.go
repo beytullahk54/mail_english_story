@@ -3,9 +3,9 @@ package models
 import "time"
 
 type Subscriber struct {
-	ID        int       `json:"id"`
-	Email     string    `json:"email"`
-	Level     string    `json:"level"`
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	Email     string    `json:"email" gorm:"uniqueIndex;not null"`
+	Level     string    `json:"level" gorm:"size:10"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
