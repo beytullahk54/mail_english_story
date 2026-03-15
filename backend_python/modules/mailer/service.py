@@ -85,30 +85,42 @@ class MailerService:
             raise e
 
     def send_story(self, request: SendStoryRequest):
-        print(f"\n--- MAIL GÖNDERİMİ BAŞLADI: {request.topic} ---")
-        
-        # 1. Konu ve Hikaye temizliği
+        # 1. Konu, Level ve Hikaye temizliği
         current_topic = request.topic.strip()
-        if not current_topic or current_topic == "string":
-            current_topic = "Travel" # Varsayılan konu seyahat olsun
+        if not current_topic or current_topic.lower() == "string":
+            current_topic = "Travel"
             
+        # Seviyeyi doğrula
+        clean_level = request.level.lower().strip()
+        if clean_level not in ["beginner", "intermediate", "advanced"]:
+            clean_level = "beginner"
+
         current_story = request.story.strip()
-        if not current_story or current_story == "string":
-            print(f"Hikaye boş, AI üretimi başlatılıyor: {current_topic} ({request.level})")
+        
+        # Eğer hikaye; boşsa, "string" ise veya konu ile aynıysa AI üretsin
+        should_generate = (
+            not current_story or 
+            current_story.lower() == "string" or 
+            current_story.lower() == current_topic.lower()
+        )
+
+        if should_generate:
+            print(f"\n--- AI HİKAYE ÜRETİMİ BAŞLADI: {current_topic} ({clean_level}) ---")
             story_req = StoryRequest(
                 topic=current_topic,
-                level=request.level if request.level in ["beginner", "intermediate", "advanced"] else "beginner",
+                level=clean_level,
                 word_count=200 
             )
             generated = self.story_service.generate_story(story_req)
             current_story = generated.story
-            print("AI Hikayeyi başarıyla üretti.")
+            print("AI Hikayeyi başarıyla üretti.\n")
 
+        print(f"--- MAIL GÖNDERİMİ BAŞLADI: {current_topic} ---")
         emails = self._get_subscribers(request.level_filter)
         
         print(f"Gönderilecek Toplam Email Sayısı: {len(emails)}")
         subject = f"📖 Your English Story: {current_topic}"
-        html = build_email_html(current_topic, request.level, current_story)
+        html = build_email_html(current_topic, clean_level, current_story)
 
         sent, failed, recipients = 0, 0, []
 
