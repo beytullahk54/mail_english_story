@@ -7,7 +7,11 @@ class SubscriberService:
         self.db = db
 
     def subscribe_user(self, input: SubscriberInput) -> Subscriber:
-        subscriber = Subscriber(email=input.email, level=input.level)
+        subscriber = Subscriber(
+            email=input.email, 
+            level=input.level,
+            language=input.language
+        )
         self.db.add(subscriber)
         self.db.commit()
         self.db.refresh(subscriber)
