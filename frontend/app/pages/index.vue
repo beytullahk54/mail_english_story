@@ -94,7 +94,11 @@ const displayLanguages = ref([
     { label: 'Türkçe', value: 'Türkçe' },
     { label: 'English', value: 'English' },
     { label: 'Deutsch', value: 'Deutsch' },
-    { label: 'Español', value: 'Español' }
+    { label: 'Español', value: 'Español' },
+    { label: 'Bahasa Melayu', value: 'Malay' },
+    { label: 'Svenska', value: 'Swedish' },
+    { label: 'Nederlands', value: 'Dutch' },
+    { label: 'Dansk', value: 'Danish' }
 ]);
 const selectedLevel = ref(null);
 const levels = ref(['A1', 'A2', 'B1', 'B2']);
@@ -158,6 +162,62 @@ const translations = {
     successDetail: (lvl) => `Suscrito con éxito al boletín para el nivel ${lvl || 'cualquiera'}.`,
     errorSummary: 'Error',
     errorDetail: 'Ocurrió un error durante la suscripción.'
+  },
+  'Malay': {
+    title: 'Cerita <span class="glow-text">Bahasa Inggeris</span> Baru Setiap Hari',
+    subtitle: 'Jadikan amalan membaca Bahasa Inggeris anda menyeronokkan. Langgan dan dapatkan cerita pendek yang dipilih khas sesuai dengan tahap anda setiap hari.',
+    button: 'Langgan Sekarang',
+    levelPlaceholder: 'Tahap',
+    emailPlaceholder: 'Alamat e-mel anda...',
+    feature1: 'Percuma Sepenuhnya',
+    feature2: 'Membina Perbendaharaan Kata',
+    feature3: 'Tabiat Membaca Harian',
+    successSummary: 'Hebat!',
+    successDetail: (lvl) => `Berjaya melanggan buletin untuk tahap ${lvl || 'sebarang'}.`,
+    errorSummary: 'Ralat',
+    errorDetail: 'Ralat berlaku semasa langganan.'
+  },
+  'Swedish': {
+    title: 'En ny <span class="glow-text">engelsk berättelse</span> varje dag',
+    subtitle: 'Gör din engelska lästräning rolig. Prenumerera och få noggrant utvalda noveller som passar din nivå i din inkorg varje dag.',
+    button: 'Prenumerera nu',
+    levelPlaceholder: 'Nivå',
+    emailPlaceholder: 'Din e-postadress...',
+    feature1: 'Helt gratis',
+    feature2: 'Ordförrådsbyggande',
+    feature3: 'Daglig läsvana',
+    successSummary: 'Grymt!',
+    successDetail: (lvl) => `Prenumerationen på nyhetsbrevet för nivån ${lvl || 'valfri'} lyckades.`,
+    errorSummary: 'Fel',
+    errorDetail: 'Ett fel uppstod vid prenumerationen.'
+  },
+  'Dutch': {
+    title: 'Elke dag een nieuw <span class="glow-text">Engels verhaal</span>',
+    subtitle: 'Maak je Engelse leesvaardigheid leuk. Abonneer je en ontvang elke dag zorgvuldig geselecteerde korte verhalen die passen bij jouw niveau in je inbox.',
+    button: 'Nu abonneren',
+    levelPlaceholder: 'Niveau',
+    emailPlaceholder: 'Uw e-mailadres...',
+    feature1: 'Helemaal gratis',
+    feature2: 'Woordenschat opbouwen',
+    feature3: 'Dagelijkse leesgewohnte',
+    successSummary: 'Geweldig!',
+    successDetail: (lvl) => `Succesvol geabonneerd op de nieuwsbrief voor niveau ${lvl || 'elk'}.`,
+    errorSummary: 'Fout',
+    errorDetail: 'Er is een fout opgetreden tijdens het abonneren.'
+  },
+  'Danish': {
+    title: 'En ny <span class="glow-text">engelsk historie</span> hver dag',
+    subtitle: 'Gør din engelske læsetræning sjov. Tilmeld dig og få omhyggeligt udvalgte noveller, der passer til dit niveau, i din indbakke hver dag.',
+    button: 'Tilmeld dig nu',
+    levelPlaceholder: 'Niveau',
+    emailPlaceholder: 'Din e-mailadresse...',
+    feature1: 'Helt gratis',
+    feature2: 'Ordforrådsopbygning',
+    feature3: 'Daglig læsevane',
+    successSummary: 'Fantastisk!',
+    successDetail: (lvl) => `Tilmelding til nyhedsbrevet for niveau ${lvl || 'vilkårligt'} lykkedes.`,
+    errorSummary: 'Fejl',
+    errorDetail: 'Der opstod en fejl under tilmeldingen.'
   }
 };
 
@@ -173,7 +233,11 @@ onMounted(() => {
     'tr': 'Türkçe',
     'en': 'English',
     'de': 'Deutsch',
-    'es': 'Español'
+    'es': 'Español',
+    'ms': 'Malay',
+    'sv': 'Swedish',
+    'nl': 'Dutch',
+    'da': 'Danish'
   };
 
   if (langMap[shortLang]) {
