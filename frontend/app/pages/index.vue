@@ -116,6 +116,7 @@ const translations = {
     feature1: 'Tamamen Ücretsiz',
     feature2: 'Kelime Dağarcığı Geliştirme',
     feature3: 'Günlük Okuma Alışkanlığı',
+    pageTitle: 'Günlük İngilizce Hikaye Bülteni',
     successSummary: 'Harika!',
     successDetail: (lvl) => `${lvl || 'Herhangi bir'} seviyesi için bültene başarıyla abone oldunuz.`,
     errorSummary: 'Hata',
@@ -130,6 +131,7 @@ const translations = {
     feature1: 'Completely Free',
     feature2: 'Vocabulary Building',
     feature3: 'Daily Reading Habit',
+    pageTitle: 'Daily English Story Newsletter',
     successSummary: 'Awesome!',
     successDetail: (lvl) => `Successfully subscribed to the newsletter for ${lvl || 'any'} level.`,
     errorSummary: 'Error',
@@ -144,6 +146,7 @@ const translations = {
     feature1: 'Völlig Kostenlos',
     feature2: 'Wortschatzaufbau',
     feature3: 'Tägliche Lesegewohnheit',
+    pageTitle: 'Täglicher englischer Geschichten-Newsletter',
     successSummary: 'Großartig!',
     successDetail: (lvl) => `Erfolgreich für den Newsletter auf ${lvl || 'beliebigem'} Niveau angemeldet.`,
     errorSummary: 'Fehler',
@@ -158,6 +161,7 @@ const translations = {
     feature1: 'Completamente Gratis',
     feature2: 'Construcción de Vocabulario',
     feature3: 'Hábito de Lectura Diario',
+    pageTitle: 'Boletín Diario de Historias en Inglés',
     successSummary: '¡Genial!',
     successDetail: (lvl) => `Suscrito con éxito al boletín para el nivel ${lvl || 'cualquiera'}.`,
     errorSummary: 'Error',
@@ -172,6 +176,7 @@ const translations = {
     feature1: 'Percuma Sepenuhnya',
     feature2: 'Membina Perbendaharaan Kata',
     feature3: 'Tabiat Membaca Harian',
+    pageTitle: 'Buletin Cerita Inggeris Harian',
     successSummary: 'Hebat!',
     successDetail: (lvl) => `Berjaya melanggan buletin untuk tahap ${lvl || 'sebarang'}.`,
     errorSummary: 'Ralat',
@@ -186,6 +191,7 @@ const translations = {
     feature1: 'Helt gratis',
     feature2: 'Ordförrådsbyggande',
     feature3: 'Daglig läsvana',
+    pageTitle: 'Dagligt engelskt berättelsenyhetsbrev',
     successSummary: 'Grymt!',
     successDetail: (lvl) => `Prenumerationen på nyhetsbrevet för nivån ${lvl || 'valfri'} lyckades.`,
     errorSummary: 'Fel',
@@ -200,6 +206,7 @@ const translations = {
     feature1: 'Helemaal gratis',
     feature2: 'Woordenschat opbouwen',
     feature3: 'Dagelijkse leesgewohnte',
+    pageTitle: 'Dagelijkse Engelse verhalen nieuwsbrief',
     successSummary: 'Geweldig!',
     successDetail: (lvl) => `Succesvol geabonneerd op de nieuwsbrief voor niveau ${lvl || 'elk'}.`,
     errorSummary: 'Fout',
@@ -214,6 +221,7 @@ const translations = {
     feature1: 'Helt gratis',
     feature2: 'Ordforrådsopbygning',
     feature3: 'Daglig læsevane',
+    pageTitle: 'Dagligt engelsk historienyhedsbrev',
     successSummary: 'Fantastisk!',
     successDetail: (lvl) => `Tilmelding til nyhedsbrevet for niveau ${lvl || 'vilkårligt'} lykkedes.`,
     errorSummary: 'Fejl',
@@ -224,6 +232,10 @@ const translations = {
 const t = (key) => {
   return translations[selectedLanguage.value][key];
 };
+
+useHead({
+  title: computed(() => t('pageTitle'))
+});
 
 onMounted(() => {
   const browserLang = navigator.language || navigator.userLanguage;
