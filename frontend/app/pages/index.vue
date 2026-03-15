@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 
 const email = ref('');
@@ -164,6 +164,24 @@ const translations = {
 const t = (key) => {
   return translations[selectedLanguage.value][key];
 };
+
+onMounted(() => {
+  const browserLang = navigator.language || navigator.userLanguage;
+  const shortLang = browserLang.split('-')[0].toLowerCase();
+
+  const langMap = {
+    'tr': 'Türkçe',
+    'en': 'English',
+    'de': 'Deutsch',
+    'es': 'Español'
+  };
+
+  if (langMap[shortLang]) {
+    selectedLanguage.value = langMap[shortLang];
+  } else {
+    selectedLanguage.value = 'English';
+  }
+});
 
 const subscribe = async () => {
   if (!email.value) return;
