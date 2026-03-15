@@ -1,15 +1,30 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from config import config
 
 
 def get_database_url() -> str:
-    if config.DATABASE_URL:
-        return config.DATABASE_URL
-    return (
-        f"postgresql://{config.DB_USER}:{config.DB_PASSWORD}"
-        f"@{config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME}"
+    # 1. Öncelik: Tam URL değişkenleri
+    url = (
+        os.getenv("DATABASE_URL")
+        or os.getenv("POSTGRES_URL")
+        or os.getenv("DATABASE_PRIVATE_URL")
     )
+    if url:
+        # Railway'in bazen verdiği postgres://'i postgresql:// ile değiştirir (SQLAlchemy için)
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        return url
+    
+    # 2. Öncelik: Parçalı değişkenler (Eğer URL yoksa)
+    user = os.getenv("DB_USER", "postgres")
+    password = os.getenv("DB_PASSWORD", "")
+    host = os.getenv("DB_HOST", "localhost")
+    port = os.getenv("DB_PORT", "5432")
+    db_name = os.getenv("DB_NAME", "postgres")
+    
+    return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
 
 
 DATABASE_URL = get_database_url()

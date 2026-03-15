@@ -23,7 +23,7 @@ class Config:
     )
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
-    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT") or "587")
     SMTP_USER: str = os.getenv("SMTP_USER", "")
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME", "English Story")
