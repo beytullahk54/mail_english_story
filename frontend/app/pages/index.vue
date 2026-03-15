@@ -10,17 +10,31 @@
 
     <main class="content-wrapper anim-fade-in">
       <div class="hero glass-effect anim-slide-up">
+        <div class="lang-selector-container">
+          <Select
+            v-model="selectedLanguage"
+            :options="displayLanguages"
+            optionLabel="label"
+            optionValue="value"
+            class="lang-selector-premium"
+          >
+            <template #value="slotProps">
+              <div class="flex items-center gap-2">
+                <i class="pi pi-globe text-xs opacity-70"></i>
+                <span>{{ slotProps.value }}</span>
+              </div>
+            </template>
+          </Select>
+        </div>
 
         <div class="icon-wrapper">
           <i class="pi pi-book book-icon"></i>
         </div>
 
-        <h1 class="title">
-          Her Gün Bir <span class="glow-text">İngilizce Hikaye</span>
-        </h1>
+        <h1 class="title" v-html="t('title')"></h1>
 
         <p class="subtitle">
-          İngilizce okuma pratiğinizi eğlenceli hale getirin. Abone olun ve her gün özenle seçilmiş, seviyenize uygun İngilizce kısa hikayeler e-posta kutunuza gelsin.
+          {{ t('subtitle') }}
         </p>
 
         <form class="subscribe-form delay-1 anim-slide-up" @submit.prevent="subscribe">
@@ -28,7 +42,7 @@
             <Select
               v-model="selectedLevel"
               :options="levels"
-              placeholder="Seviye"
+              :placeholder="t('levelPlaceholder')"
               class="level-select"
             />
             <div class="email-input-wrapper">
@@ -36,7 +50,7 @@
               <InputText
                 v-model="email"
                 type="email"
-                placeholder="E-posta adresiniz..."
+                :placeholder="t('emailPlaceholder')"
                 class="email-input w-full"
                 required
               />
@@ -47,22 +61,22 @@
             class="submit-btn"
             :loading="loading"
           >
-            Hemen Abone Ol
+            {{ t('button') }}
           </Button>
         </form>
 
         <div class="features delay-2 anim-slide-up">
           <div class="feature">
             <i class="pi pi-check-circle"></i>
-            <span>Tamamen Ücretsiz</span>
+            <span>{{ t('feature1') }}</span>
           </div>
           <div class="feature">
             <i class="pi pi-check-circle"></i>
-            <span>Kelime Dağarcığı Geliştirme</span>
+            <span>{{ t('feature2') }}</span>
           </div>
           <div class="feature">
             <i class="pi pi-check-circle"></i>
-            <span>Günlük Okuma Alışkanlığı</span>
+            <span>{{ t('feature3') }}</span>
           </div>
         </div>
       </div>
@@ -71,15 +85,85 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 
 const email = ref('');
+const selectedLanguage = ref('Türkçe');
+const displayLanguages = ref([
+    { label: 'Türkçe', value: 'Türkçe' },
+    { label: 'English', value: 'English' },
+    { label: 'Deutsch', value: 'Deutsch' },
+    { label: 'Español', value: 'Español' }
+]);
 const selectedLevel = ref(null);
 const levels = ref(['A1', 'A2', 'B1', 'B2']);
 const loading = ref(false);
 const toast = useToast();
 const config = useRuntimeConfig();
+
+const translations = {
+  'Türkçe': {
+    title: 'Her Gün Bir <span class="glow-text">İngilizce Hikaye</span>',
+    subtitle: 'İngilizce okuma pratiğinizi eğlenceli hale getirin. Abone olun ve her gün özenle seçilmiş, seviyenize uygun İngilizce kısa hikayeler e-posta kutunuza gelsin.',
+    button: 'Hemen Abone Ol',
+    levelPlaceholder: 'Seviye',
+    emailPlaceholder: 'E-posta adresiniz...',
+    feature1: 'Tamamen Ücretsiz',
+    feature2: 'Kelime Dağarcığı Geliştirme',
+    feature3: 'Günlük Okuma Alışkanlığı',
+    successSummary: 'Harika!',
+    successDetail: (lvl) => `${lvl || 'Herhangi bir'} seviyesi için bültene başarıyla abone oldunuz.`,
+    errorSummary: 'Hata',
+    errorDetail: 'Abonelik işlemi sırasında bir hata oluştu.'
+  },
+  'English': {
+    title: 'A New <span class="glow-text">English Story</span> Every Day',
+    subtitle: 'Make your English reading practice fun. Subscribe and get carefully selected short stories suited to your level in your inbox every day.',
+    button: 'Subscribe Now',
+    levelPlaceholder: 'Level',
+    emailPlaceholder: 'Your email address...',
+    feature1: 'Completely Free',
+    feature2: 'Vocabulary Building',
+    feature3: 'Daily Reading Habit',
+    successSummary: 'Awesome!',
+    successDetail: (lvl) => `Successfully subscribed to the newsletter for ${lvl || 'any'} level.`,
+    errorSummary: 'Error',
+    errorDetail: 'An error occurred during subscription.'
+  },
+  'Deutsch': {
+    title: 'Jeden Tag eine neue <span class="glow-text">deutsche Geschichte</span>',
+    subtitle: 'Machen Sie Ihr Deutsch-Lesetraining zum Vergnügen. Abonnieren Sie und erhalten Sie jeden Tag sorgfältig ausgewählte Kurzgeschichten in Ihren Posteingang.',
+    button: 'Jetzt Abonnieren',
+    levelPlaceholder: 'Niveau',
+    emailPlaceholder: 'Ihre E-Mail-Adresse...',
+    feature1: 'Völlig Kostenlos',
+    feature2: 'Wortschatzaufbau',
+    feature3: 'Tägliche Lesegewohnheit',
+    successSummary: 'Großartig!',
+    successDetail: (lvl) => `Erfolgreich für den Newsletter auf ${lvl || 'beliebigem'} Niveau angemeldet.`,
+    errorSummary: 'Fehler',
+    errorDetail: 'Ein Fehler ist beim Abonnement aufgetreten.'
+  },
+  'Español': {
+    title: 'Una nueva <span class="glow-text">historia en español</span> cada día',
+    subtitle: 'Haz que tu práctica de lectura en español sea divertida. Suscríbete y recibe cada día historias cortas cuidadosamente seleccionadas en tu bandeja de entrada.',
+    button: 'Suscríbete Ahora',
+    levelPlaceholder: 'Nivel',
+    emailPlaceholder: 'Tu correo electrónico...',
+    feature1: 'Completamente Gratis',
+    feature2: 'Construcción de Vocabulario',
+    feature3: 'Hábito de Lectura Diario',
+    successSummary: '¡Genial!',
+    successDetail: (lvl) => `Suscrito con éxito al boletín para el nivel ${lvl || 'cualquiera'}.`,
+    errorSummary: 'Error',
+    errorDetail: 'Ocurrió un error durante la suscripción.'
+  }
+};
+
+const t = (key) => {
+  return translations[selectedLanguage.value][key];
+};
 
 const subscribe = async () => {
   if (!email.value) return;
@@ -91,15 +175,16 @@ const subscribe = async () => {
       method: 'POST',
       body: {
         email: email.value,
-        level: selectedLevel.value || 'None'
+        level: selectedLevel.value || 'None',
+        language: selectedLanguage.value
       }
     });
 
     loading.value = false;
     toast.add({
       severity: 'success',
-      summary: 'Harika!',
-      detail: `${selectedLevel.value || 'Herhangi bir'} seviyesi için bültene başarıyla abone oldunuz.`,
+      summary: t('successSummary'),
+      detail: t('successDetail')(selectedLevel.value),
       life: 4000
     });
 
@@ -109,8 +194,8 @@ const subscribe = async () => {
     loading.value = false;
     toast.add({
       severity: 'error',
-      summary: 'Hata',
-      detail: error.data?.error || 'Abonelik işlemi sırasında bir hata oluştu.',
+      summary: t('errorSummary'),
+      detail: error.data?.error || t('errorDetail'),
       life: 4000
     });
   }
@@ -187,8 +272,41 @@ const subscribe = async () => {
 }
 
 .hero {
-  padding: 3rem;
+  padding: 4.5rem 3rem 3rem 3rem;
   text-align: center;
+  position: relative;
+}
+
+.lang-selector-container {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 20;
+}
+
+:deep(.lang-selector-premium) {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  width: 130px;
+  transition: all 0.3s ease;
+}
+
+:deep(.lang-selector-premium:hover) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+:deep(.lang-selector-premium .p-select-label) {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+}
+
+:deep(.lang-selector-premium .p-select-dropdown) {
+  width: 2rem;
 }
 
 .icon-wrapper {
@@ -353,6 +471,18 @@ const subscribe = async () => {
 }
 
 @media (max-width: 640px) {
+  .lang-selector-container {
+    position: static;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+
+  :deep(.lang-selector-premium) {
+    width: 100%;
+    max-width: 200px;
+  }
+
   .input-group {
     flex-direction: column;
   }
