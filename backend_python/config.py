@@ -27,6 +27,7 @@ class Config:
     SMTP_USER: str = os.getenv("SMTP_USER", "")
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME", "English Story")
+    API_TOKEN: str = os.getenv("API_TOKEN", "")
 
 
 config = Config()
