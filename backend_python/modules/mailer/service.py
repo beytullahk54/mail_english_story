@@ -59,63 +59,69 @@ class MailerService:
         if response.status_code not in [200, 201, 202]:
             raise Exception(f"Brevo API Error: {response.text}")
 
+    def _get_active_levels(self, language_filter: str | None = None) -> list[str]:
+        query = self.db.query(Subscriber.level).distinct()
+        if language_filter and language_filter.lower() not in ["string", ""]:
+            query = query.filter(Subscriber.language == language_filter)
+        return [row[0] for row in query.all() if row[0] and row[0].strip()]
+
     def send_story(self, request: SendStoryRequest):
-        # 1. Temizlik ve Varsayılanlar
         current_topic = request.topic.strip() if request.topic else "General"
         if current_topic.lower() == "string":
             current_topic = "General"
-            
-        # Level Boşsa A2 yapılsın
-        clean_level = request.level.lower().strip() if request.level else "a2"
-        if clean_level in ["none", "string", ""]:
-            clean_level = "a2"
 
-        current_story = request.story.strip()
-        should_generate = (
-            not current_story or 
-            current_story.lower() == "string" or 
-            current_story.lower() == current_topic.lower()
-        )
+        # Hangi seviyelere göndereceğimizi belirle
+        level_filter = request.level_filter
+        if level_filter and level_filter.lower() not in ["string", ""]:
+            levels = [level_filter.lower().strip()]
+        else:
+            levels = self._get_active_levels(request.language_filter)
 
-        if should_generate:
-            print(f"AI Hikaye Üretiliyor: {current_topic} ({clean_level})")
+        print(f"[Mailer] Gönderilecek seviyeler: {levels}")
+
+        subject = f"📖 Daily Story: {current_topic}"
+        total_sent, total_failed, all_recipients = 0, 0, []
+
+        for level in levels:
+            print(f"\n[Mailer] {level.upper()} seviyesi için hikaye üretiliyor...")
+
+            # Her seviye için ayrı hikaye üret
             story_req = StoryRequest(
                 topic=current_topic,
-                level=clean_level,
-                language="English", # İçerik her zaman İngilizce
-                word_count=200 
-            )
-            generated = self.story_service.generate_story(story_req)
-            current_story = generated.story
-
-        # 2. Hikayeyi Veritabanına Kaydet
-        try:
-            db_story = Story(
-                topic=current_topic,
-                level=clean_level,
+                level=level,
                 language="English",
-                content=current_story
+                word_count=200
             )
-            self.db.add(db_story)
-            self.db.commit()
-            print("Hikaye veritabanına kaydedildi.")
-        except Exception as e:
-            print(f"Hikaye kaydedilirken hata: {str(e)}")
-            self.db.rollback()
-
-        # 3. Mail Gönderimi
-        emails = self._get_subscribers(request.level_filter, request.language_filter)
-        subject = f"📖 Daily Story: {current_topic}"
-
-        sent, failed, recipients = 0, 0, []
-        for email in emails:
             try:
-                unsubscribe_url = f"{config.APP_BASE_URL}/api/v1/unsubscribe?email={quote(email)}"
-                html = build_email_html(current_topic, clean_level, current_story, unsubscribe_url)
-                self._send_one(email, subject, html)
-                sent += 1
-                recipients.append(email)
-            except:
-                failed += 1
+                generated = self.story_service.generate_story(story_req)
+                level_story = generated.story
+            except Exception as e:
+                print(f"[Mailer] {level} hikayesi üretilemedi: {e}")
+                total_failed += len(self._get_subscribers(level, request.language_filter))
+                continue
 
-        return SendStoryResponse(sent=sent, failed=failed, recipients=recipients)
+            # Veritabanına kaydet
+            try:
+                db_story = Story(topic=current_topic, level=level, language="English", content=level_story)
+                self.db.add(db_story)
+                self.db.commit()
+            except Exception as e:
+                print(f"[Mailer] {level} hikayesi kaydedilemedi: {e}")
+                self.db.rollback()
+
+            # O seviyedeki abonelere gönder
+            emails = self._get_subscribers(level, request.language_filter)
+            print(f"[Mailer] {level.upper()} için {len(emails)} abone bulundu.")
+
+            for email in emails:
+                try:
+                    unsubscribe_url = f"{config.APP_BASE_URL}/api/v1/unsubscribe?email={quote(email)}"
+                    html = build_email_html(current_topic, level, level_story, unsubscribe_url)
+                    self._send_one(email, subject, html)
+                    total_sent += 1
+                    all_recipients.append(email)
+                except Exception as e:
+                    print(f"[Mailer] {email} gönderilemedi: {e}")
+                    total_failed += 1
+
+        return SendStoryResponse(sent=total_sent, failed=total_failed, recipients=all_recipients)
