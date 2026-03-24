@@ -28,7 +28,7 @@ class Config:
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME", "English Story")
     APP_SECRET_TOKEN: str = os.getenv("APP_SECRET_TOKEN", "")
-    APP_BASE_URL: str = os.getenv("APP_BASE_URL", "http://localhost:8000")
+    APP_BASE_URL: str = os.getenv("APP_BASE_URL", "https://englishstory.kodsey.com")
 
 
 config = Config()
