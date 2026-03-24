@@ -1,5 +1,6 @@
 import requests
 import json
+from urllib.parse import quote
 from sqlalchemy.orm import Session
 from datetime import datetime
 
@@ -105,11 +106,12 @@ class MailerService:
         # 3. Mail Gönderimi
         emails = self._get_subscribers(request.level_filter, request.language_filter)
         subject = f"📖 Daily Story: {current_topic}"
-        html = build_email_html(current_topic, clean_level, current_story)
 
         sent, failed, recipients = 0, 0, []
         for email in emails:
             try:
+                unsubscribe_url = f"{config.APP_BASE_URL}/api/v1/unsubscribe?email={quote(email)}"
+                html = build_email_html(current_topic, clean_level, current_story, unsubscribe_url)
                 self._send_one(email, subject, html)
                 sent += 1
                 recipients.append(email)

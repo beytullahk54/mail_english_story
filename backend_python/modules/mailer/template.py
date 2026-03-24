@@ -1,4 +1,4 @@
-def build_welcome_email_html(email: str, level: str, language: str) -> str:
+def build_welcome_email_html(email: str, level: str, language: str, unsubscribe_url: str = "") -> str:
     level_colors = {
         "a1": "#34d399",
         "a2": "#34d399",
@@ -102,6 +102,7 @@ def build_welcome_email_html(email: str, level: str, language: str) -> str:
               <p style="margin:0;font-size:12px;color:#475569;">
                 You received this email because you subscribed to English Story newsletter.<br/>
               </p>
+              {f'<a href="{unsubscribe_url}" style="display:inline-block;margin-top:16px;padding:8px 20px;background:transparent;border:1px solid #475569;border-radius:8px;color:#64748b;font-size:12px;text-decoration:none;">Unsubscribe</a>' if unsubscribe_url else ''}
             </td>
           </tr>
 
@@ -114,7 +115,7 @@ def build_welcome_email_html(email: str, level: str, language: str) -> str:
 """
 
 
-def build_email_html(topic: str, level: str, story: str) -> str:
+def build_email_html(topic: str, level: str, story: str, unsubscribe_url: str = "") -> str:
     level_colors = {
         "beginner": "#34d399",
         "intermediate": "#60a5fa",
@@ -190,6 +191,7 @@ def build_email_html(topic: str, level: str, story: str) -> str:
               <p style="margin:0;font-size:12px;color:#475569;">
                 Bu e-postayı aldınız çünkü English Story bültenine abone oldunuz.<br/>
               </p>
+              {f'<a href="{unsubscribe_url}" style="display:inline-block;margin-top:16px;padding:8px 20px;background:transparent;border:1px solid #475569;border-radius:8px;color:#64748b;font-size:12px;text-decoration:none;">Unsubscribe</a>' if unsubscribe_url else ''}
             </td>
           </tr>
 

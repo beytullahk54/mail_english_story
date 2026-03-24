@@ -1,4 +1,5 @@
 import requests
+from urllib.parse import quote
 from sqlalchemy.orm import Session
 
 from config import config
@@ -9,6 +10,14 @@ from modules.mailer.template import build_welcome_email_html
 class SubscriberService:
     def __init__(self, db: Session):
         self.db = db
+
+    def unsubscribe_user(self, email: str) -> bool:
+        subscriber = self.db.query(Subscriber).filter(Subscriber.email == email).first()
+        if not subscriber:
+            return False
+        self.db.delete(subscriber)
+        self.db.commit()
+        return True
 
     def subscribe_user(self, input: SubscriberInput) -> Subscriber:
         subscriber = Subscriber(
@@ -33,10 +42,12 @@ class SubscriberService:
         level = subscriber.level or "A2"
         language = subscriber.language or "English"
 
+        unsubscribe_url = f"{config.APP_BASE_URL}/api/v1/unsubscribe?email={quote(subscriber.email)}"
         html = build_welcome_email_html(
             email=subscriber.email,
             level=level,
             language=language,
+            unsubscribe_url=unsubscribe_url,
         )
 
         payload = {
