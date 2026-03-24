@@ -8,6 +8,10 @@ def build_welcome_email_html(email: str, level: str, language: str, unsubscribe_
         "c2": "#f59e0b",
     }
     badge_color = level_colors.get(level.lower(), "#818cf8")
+    unsubscribe_btn = (
+        '<a href="' + unsubscribe_url + '" style="display:inline-block;margin-top:16px;padding:8px 20px;background:transparent;border:1px solid #475569;border-radius:8px;color:#64748b;font-size:12px;text-decoration:none;">Unsubscribe</a>'
+        if unsubscribe_url else ""
+    )
 
     return f"""
 <!DOCTYPE html>
@@ -102,7 +106,7 @@ def build_welcome_email_html(email: str, level: str, language: str, unsubscribe_
               <p style="margin:0;font-size:12px;color:#475569;">
                 You received this email because you subscribed to English Story newsletter.<br/>
               </p>
-              {f'<a href="{unsubscribe_url}" style="display:inline-block;margin-top:16px;padding:8px 20px;background:transparent;border:1px solid #475569;border-radius:8px;color:#64748b;font-size:12px;text-decoration:none;">Unsubscribe</a>' if unsubscribe_url else ''}
+              {unsubscribe_btn}
             </td>
           </tr>
 
@@ -122,6 +126,10 @@ def build_email_html(topic: str, level: str, story: str, unsubscribe_url: str = 
         "advanced": "#f59e0b",
     }
     badge_color = level_colors.get(level, "#818cf8")
+    unsubscribe_btn = (
+        '<a href="' + unsubscribe_url + '" style="display:inline-block;margin-top:16px;padding:8px 20px;background:transparent;border:1px solid #475569;border-radius:8px;color:#64748b;font-size:12px;text-decoration:none;">Unsubscribe</a>'
+        if unsubscribe_url else ""
+    )
 
     paragraphs = "".join(
         f"<p style='margin:0 0 1em 0;'>{line}</p>"
@@ -191,7 +199,7 @@ def build_email_html(topic: str, level: str, story: str, unsubscribe_url: str = 
               <p style="margin:0;font-size:12px;color:#475569;">
                 Bu e-postayı aldınız çünkü English Story bültenine abone oldunuz.<br/>
               </p>
-              {f'<a href="{unsubscribe_url}" style="display:inline-block;margin-top:16px;padding:8px 20px;background:transparent;border:1px solid #475569;border-radius:8px;color:#64748b;font-size:12px;text-decoration:none;">Unsubscribe</a>' if unsubscribe_url else ''}
+              {unsubscribe_btn}
             </td>
           </tr>
 
