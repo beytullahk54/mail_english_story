@@ -59,6 +59,26 @@ class MailerService:
         if response.status_code not in [200, 201, 202]:
             raise Exception(f"Brevo API Error: {response.text}")
 
+    def _send_admin_alert(self, subject: str, body: str) -> None:
+        if not config.ADMIN_EMAIL:
+            return
+        payload = {
+            "sender": {"name": config.MAIL_FROM_NAME, "email": config.SMTP_USER},
+            "to": [{"email": config.ADMIN_EMAIL}],
+            "subject": subject,
+            "htmlContent": f"<p>{body}</p>"
+        }
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "api-key": config.SMTP_PASSWORD
+        }
+        try:
+            requests.post("https://api.brevo.com/v3/smtp/email", json=payload, headers=headers)
+            print(f"[Admin Alert] Gönderildi: {config.ADMIN_EMAIL}")
+        except Exception as e:
+            print(f"[Admin Alert] Gönderilemedi: {e}")
+
     def _get_active_levels(self, language_filter: str | None = None) -> list[str]:
         query = self.db.query(Subscriber.level).distinct()
         if language_filter and language_filter.lower() not in ["string", ""]:
@@ -96,7 +116,18 @@ class MailerService:
                 generated = self.story_service.generate_story(story_req)
                 level_story = generated.story
             except Exception as e:
+                error_msg = str(e).lower()
                 print(f"[Mailer] {level} hikayesi üretilemedi: {e}")
+                if any(k in error_msg for k in ["quota", "rate", "limit", "429", "resource_exhausted"]):
+                    self._send_admin_alert(
+                        subject="⚠️ Gemini API Limiti Doldu",
+                        body=(
+                            f"Gemini API kotası aşıldı, hikaye üretilemedi.<br><br>"
+                            f"<b>Seviye:</b> {level.upper()}<br>"
+                            f"<b>Konu:</b> {current_topic}<br><br>"
+                            f"<b>Hata:</b> {e}"
+                        )
+                    )
                 total_failed += len(self._get_subscribers(level, request.language_filter))
                 continue
 

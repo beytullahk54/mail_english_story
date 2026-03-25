@@ -29,6 +29,7 @@ class Config:
     MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME", "English Story")
     APP_SECRET_TOKEN: str = os.getenv("APP_SECRET_TOKEN", "")
     APP_BASE_URL: str = os.getenv("APP_BASE_URL", "https://englishstory.kodsey.com")
+    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "kahramanbey54@gmail.com")
 
 
 config = Config()
