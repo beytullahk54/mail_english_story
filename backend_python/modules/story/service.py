@@ -1,6 +1,7 @@
 import google.generativeai as genai
+from sqlalchemy.orm import Session
 from config import config
-from .models import StoryRequest, StoryResponse
+from .models import Story, StoryRequest, StoryResponse, StoryItem, StoriesListResponse
 
 LEVEL_DESCRIPTIONS = {
     "a1": "very simple sentences, basic vocabulary (A1 level)",
@@ -37,4 +38,21 @@ class StoryService:
             topic=request.topic,
             level=request.level,
             language="English" # The content language is always English
+        )
+
+    def get_stories(self, db: Session, page: int, page_size: int, level: str | None, language: str | None) -> StoriesListResponse:
+        query = db.query(Story)
+        if level:
+            query = query.filter(Story.level == level)
+        if language:
+            query = query.filter(Story.language == language)
+
+        total = query.count()
+        items = query.order_by(Story.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+
+        return StoriesListResponse(
+            items=[StoryItem.model_validate(s) for s in items],
+            total=total,
+            page=page,
+            page_size=page_size,
         )

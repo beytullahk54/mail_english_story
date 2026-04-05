@@ -79,6 +79,13 @@
             <span>{{ t('feature3') }}</span>
           </div>
         </div>
+
+        <div class="story-link delay-3 anim-slide-up">
+          <NuxtLink to="/stories" class="story-cta">
+            <i class="pi pi-book"></i>
+            {{ t('storiesLink') }}
+          </NuxtLink>
+        </div>
       </div>
     </main>
   </div>
@@ -121,7 +128,8 @@ const translations = {
     successDetail: (lvl) => `${lvl || 'Herhangi bir'} seviyesi için bültene başarıyla abone oldunuz.`,
     errorSummary: 'Hata',
     errorDetail: 'Abonelik işlemi sırasında bir hata oluştu.',
-    validationError: 'Lütfen bir dil ve seviye seçiniz.'
+    validationError: 'Lütfen bir dil ve seviye seçiniz.',
+    storiesLink: 'Hikaye Arşivine Göz At'
   },
   'English': {
     title: 'A New <span class="glow-text">English Story</span> Every Day',
@@ -137,7 +145,8 @@ const translations = {
     successDetail: (lvl) => `Successfully subscribed to the newsletter for ${lvl || 'any'} level.`,
     errorSummary: 'Error',
     errorDetail: 'An error occurred during subscription.',
-    validationError: 'Please select a language and level.'
+    validationError: 'Please select a language and level.',
+    storiesLink: 'Browse Story Archive'
   },
   'Deutsch': {
     title: 'Jeden Tag eine neue <span class="glow-text">deutsche Geschichte</span>',
@@ -153,7 +162,8 @@ const translations = {
     successDetail: (lvl) => `Erfolgreich für den Newsletter auf ${lvl || 'beliebigem'} Niveau angemeldet.`,
     errorSummary: 'Fehler',
     errorDetail: 'Ein Fehler ist beim Abonnement aufgetreten.',
-    validationError: 'Bitte wählen Sie eine Sprache und ein Niveau.'
+    validationError: 'Bitte wählen Sie eine Sprache und ein Niveau.',
+    storiesLink: 'Geschichten-Archiv durchsuchen'
   },
   'Español': {
     title: 'Una nueva <span class="glow-text">historia en español</span> cada día',
@@ -169,7 +179,8 @@ const translations = {
     successDetail: (lvl) => `Suscrito con éxito al boletín para el nivel ${lvl || 'cualquiera'}.`,
     errorSummary: 'Error',
     errorDetail: 'Ocurrió un error durante la suscripción.',
-    validationError: 'Por favor, selecciona un idioma y un nivel.'
+    validationError: 'Por favor, selecciona un idioma y un nivel.',
+    storiesLink: 'Explorar Archivo de Historias'
   },
   'Malay': {
     title: 'Cerita <span class="glow-text">Bahasa Inggeris</span> Baru Setiap Hari',
@@ -185,7 +196,8 @@ const translations = {
     successDetail: (lvl) => `Berjaya melanggan buletin untuk tahap ${lvl || 'sebarang'}.`,
     errorSummary: 'Ralat',
     errorDetail: 'Ralat berlaku semasa langganan.',
-    validationError: 'Sila pilih bahasa dan tahap.'
+    validationError: 'Sila pilih bahasa dan tahap.',
+    storiesLink: 'Semak Arkib Cerita'
   },
   'Swedish': {
     title: 'En ny <span class="glow-text">engelsk berättelse</span> varje dag',
@@ -201,7 +213,8 @@ const translations = {
     successDetail: (lvl) => `Prenumerationen på nyhetsbrevet för nivån ${lvl || 'valfri'} lyckades.`,
     errorSummary: 'Fel',
     errorDetail: 'Ett fel uppstod vid prenumerationen.',
-    validationError: 'Välj ett språk och en nivå.'
+    validationError: 'Välj ett språk och en nivå.',
+    storiesLink: 'Bläddra i Berättelsearkivet'
   },
   'Dutch': {
     title: 'Elke dag een nieuw <span class="glow-text">Engels verhaal</span>',
@@ -217,7 +230,8 @@ const translations = {
     successDetail: (lvl) => `Succesvol geabonneerd op de nieuwsbrief voor niveau ${lvl || 'elk'}.`,
     errorSummary: 'Fout',
     errorDetail: 'Er is een fout opgetreden tijdens het abonneren.',
-    validationError: 'Selecteer een taal en niveau.'
+    validationError: 'Selecteer een taal en niveau.',
+    storiesLink: 'Blader door het Verhaalarchief'
   },
   'Danish': {
     title: 'En ny <span class="glow-text">engelsk historie</span> hver dag',
@@ -233,7 +247,8 @@ const translations = {
     successDetail: (lvl) => `Tilmelding til nyhedsbrevet for niveau ${lvl || 'vilkårligt'} lykkedes.`,
     errorSummary: 'Fejl',
     errorDetail: 'Der opstod en fejl under tilmeldingen.',
-    validationError: 'Vælg venligst et sprog og et niveau.'
+    validationError: 'Vælg venligst et sprog og et niveau.',
+    storiesLink: 'Gennemse Historiearkivet'
   }
 };
 

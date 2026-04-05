@@ -1,8 +1,22 @@
-from fastapi import APIRouter, HTTPException, status
-from .models import StoryRequest, StoryResponse
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+from database import get_db
+from .models import StoriesListResponse, StoryRequest, StoryResponse
 from .service import StoryService
 
 router = APIRouter(prefix="/story", tags=["story"])
+
+
+@router.get("/list", response_model=StoriesListResponse, status_code=status.HTTP_200_OK)
+def list_stories(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=50),
+    level: str | None = Query(default=None),
+    language: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    service = StoryService()
+    return service.get_stories(db, page=page, page_size=page_size, level=level, language=language)
 
 
 @router.post("/generate", response_model=StoryResponse, status_code=status.HTTP_200_OK)

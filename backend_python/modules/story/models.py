@@ -31,3 +31,22 @@ class StoryResponse(BaseModel):
     topic: str
     level: str
     language: str
+
+
+class StoryItem(BaseModel):
+    id: int
+    topic: str
+    level: str
+    language: str
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class StoriesListResponse(BaseModel):
+    items: list[StoryItem]
+    total: int
+    page: int
+    page_size: int
