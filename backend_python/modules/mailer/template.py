@@ -119,7 +119,7 @@ def build_welcome_email_html(email: str, level: str, language: str, unsubscribe_
 """
 
 
-def build_email_html(topic: str, level: str, story: str, unsubscribe_url: str = "") -> str:
+def build_email_html(topic: str, level: str, story: str, unsubscribe_url: str = "", story_url: str = "") -> str:
     level_colors = {
         "beginner": "#34d399",
         "intermediate": "#60a5fa",
@@ -129,6 +129,10 @@ def build_email_html(topic: str, level: str, story: str, unsubscribe_url: str = 
     unsubscribe_btn = (
         '<a href="' + unsubscribe_url + '" style="display:inline-block;margin-top:16px;padding:8px 20px;background:transparent;border:1px solid #475569;border-radius:8px;color:#64748b;font-size:12px;text-decoration:none;">Unsubscribe</a>'
         if unsubscribe_url else ""
+    )
+    story_cta = (
+        '<a href="' + story_url + '" style="display:inline-block;margin-top:24px;padding:12px 28px;background:linear-gradient(135deg,#6366f1,#a855f7);border-radius:12px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;letter-spacing:0.02em;">📖 Hikayeyi Web\'de Görüntüle</a>'
+        if story_url else ""
     )
 
     paragraphs = "".join(
@@ -189,6 +193,13 @@ def build_email_html(topic: str, level: str, story: str, unsubscribe_url: str = 
               <div style="font-size:16px;line-height:1.9;color:#e2e8f0;">
                 {paragraphs}
               </div>
+
+              <!-- View Story CTA -->
+              {f'''
+              <div style="text-align:center;margin-top:8px;">
+                {story_cta}
+              </div>
+              ''' if story_cta else ""}
 
             </td>
           </tr>

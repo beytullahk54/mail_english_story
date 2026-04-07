@@ -40,6 +40,12 @@ class StoryService:
             language="English" # The content language is always English
         )
 
+    def get_story_by_id(self, db: Session, story_id: int) -> StoryItem | None:
+        story = db.query(Story).filter(Story.id == story_id).first()
+        if not story:
+            return None
+        return StoryItem.model_validate(story)
+
     def get_stories(self, db: Session, page: int, page_size: int, level: str | None, language: str | None) -> StoriesListResponse:
         query = db.query(Story)
         if level:

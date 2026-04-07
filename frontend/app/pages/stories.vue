@@ -52,13 +52,13 @@
 
       <!-- Stories grid -->
       <div v-else class="stories-grid">
-        <div
+        <NuxtLink
           v-for="story in stories"
           :key="story.id"
+          :to="`/stories/${story.id}`"
           class="story-card glass-effect"
-          :class="{ expanded: expandedId === story.id }"
         >
-          <div class="story-card-header" @click="toggleExpand(story.id)">
+          <div class="story-card-header">
             <div class="story-meta">
               <span class="level-badge" :class="`level-${story.level.toLowerCase()}`">
                 {{ story.level.toUpperCase() }}
@@ -72,19 +72,12 @@
               <i class="pi pi-tag"></i>
               {{ story.topic }}
             </div>
-            <i class="pi expand-icon" :class="expandedId === story.id ? 'pi-chevron-up' : 'pi-chevron-down'"></i>
+            <i class="pi pi-arrow-right read-icon"></i>
           </div>
 
-          <Transition name="expand">
-            <div v-if="expandedId === story.id" class="story-body">
-              <p class="story-text">{{ story.content }}</p>
-              <button class="copy-btn" @click="copyStory(story)">
-                <i :class="copiedId === story.id ? 'pi pi-check' : 'pi pi-copy'" />
-                {{ copiedId === story.id ? 'Copied!' : 'Copy' }}
-              </button>
-            </div>
-          </Transition>
-        </div>
+          <!-- Preview (ilk 120 karakter) -->
+          <p class="story-preview">{{ story.content.slice(0, 120) }}…</p>
+        </NuxtLink>
       </div>
 
       <!-- Pagination -->
@@ -113,8 +106,6 @@ const page = ref(1);
 const pageSize = 10;
 const loading = ref(false);
 const filterLevel = ref(null);
-const expandedId = ref(null);
-const copiedId = ref(null);
 
 const totalPages = computed(() => Math.ceil(total.value / pageSize));
 
@@ -131,7 +122,6 @@ const levelOptions = [
 
 const fetchStories = async () => {
   loading.value = true;
-  expandedId.value = null;
 
   const params = new URLSearchParams({
     page: page.value,
@@ -155,16 +145,6 @@ const goToPage = (p) => {
   page.value = p;
   fetchStories();
   window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-const toggleExpand = (id) => {
-  expandedId.value = expandedId.value === id ? null : id;
-};
-
-const copyStory = async (story) => {
-  await navigator.clipboard.writeText(story.content);
-  copiedId.value = story.id;
-  setTimeout(() => { copiedId.value = null; }, 2000);
 };
 
 const formatDate = (dateStr) => {
@@ -294,20 +274,22 @@ onMounted(fetchStories);
 
 .story-card {
   overflow: hidden;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, transform 0.2s;
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
-.story-card.expanded {
+.story-card:hover {
   border-color: rgba(129,140,248,0.4);
+  transform: translateY(-2px);
 }
 
 .story-card-header {
-  padding: 1.25rem 1.5rem;
-  cursor: pointer;
+  padding: 1.25rem 1.5rem 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   position: relative;
-  user-select: none;
 }
 
 .story-meta {
@@ -352,56 +334,30 @@ onMounted(fetchStories);
 }
 .story-topic i { color: #f59e0b; font-size: 0.85rem; }
 
-.expand-icon {
+.read-icon {
   position: absolute;
   right: 1.5rem;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-muted);
+  color: rgba(129,140,248,0.5);
   font-size: 0.85rem;
+  transition: transform 0.2s, color 0.2s;
 }
-
-/* Story body */
-.story-body {
-  padding: 0 1.5rem 1.5rem;
-  border-top: 1px solid rgba(255,255,255,0.07);
-}
-
-.story-text {
-  font-size: 1rem;
-  line-height: 1.9;
-  color: var(--text-main);
-  margin: 1.25rem 0 1rem;
-  white-space: pre-wrap;
-}
-
-.copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.9rem;
-  border-radius: 50px;
-  background: rgba(99,102,241,0.15);
-  border: 1px solid rgba(99,102,241,0.3);
+.story-card:hover .read-icon {
   color: #818cf8;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background 0.2s;
+  transform: translateY(-50%) translateX(3px);
 }
-.copy-btn:hover { background: rgba(99,102,241,0.25); }
 
-/* Expand transition */
-.expand-enter-active, .expand-leave-active {
-  transition: all 0.3s ease;
+.story-preview {
+  margin: 0;
+  padding: 0 1.5rem 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-}
-.expand-enter-from, .expand-leave-to {
-  opacity: 0;
-  max-height: 0;
-}
-.expand-enter-to, .expand-leave-from {
-  opacity: 1;
-  max-height: 2000px;
 }
 
 /* Pagination */

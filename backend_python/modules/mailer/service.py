@@ -131,11 +131,14 @@ class MailerService:
                 total_failed += len(self._get_subscribers(level, request.language_filter))
                 continue
 
-            # Veritabanına kaydet
+            # Veritabanına kaydet ve ID al
+            story_url = None
             try:
                 db_story = Story(topic=current_topic, level=level, language="English", content=level_story)
                 self.db.add(db_story)
                 self.db.commit()
+                self.db.refresh(db_story)
+                story_url = f"{config.APP_BASE_URL}/stories/{db_story.id}"
             except Exception as e:
                 print(f"[Mailer] {level} hikayesi kaydedilemedi: {e}")
                 self.db.rollback()
@@ -147,7 +150,7 @@ class MailerService:
             for email in emails:
                 try:
                     unsubscribe_url = f"{config.APP_BASE_URL}/api/v1/unsubscribe?email={quote(email)}"
-                    html = build_email_html(current_topic, level, level_story, unsubscribe_url)
+                    html = build_email_html(current_topic, level, level_story, unsubscribe_url, story_url)
                     self._send_one(email, subject, html)
                     total_sent += 1
                     all_recipients.append(email)

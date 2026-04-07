@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from database import get_db
-from .models import StoriesListResponse, StoryRequest, StoryResponse
+from .models import StoriesListResponse, StoryItem, StoryRequest, StoryResponse
 from .service import StoryService
 
 router = APIRouter(prefix="/story", tags=["story"])
@@ -17,6 +17,15 @@ def list_stories(
 ):
     service = StoryService()
     return service.get_stories(db, page=page, page_size=page_size, level=level, language=language)
+
+
+@router.get("/{story_id}", response_model=StoryItem, status_code=status.HTTP_200_OK)
+def get_story(story_id: int, db: Session = Depends(get_db)):
+    service = StoryService()
+    story = service.get_story_by_id(db, story_id)
+    if not story:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hikaye bulunamadı")
+    return story
 
 
 @router.post("/generate", response_model=StoryResponse, status_code=status.HTTP_200_OK)
