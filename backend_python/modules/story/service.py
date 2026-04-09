@@ -1,7 +1,10 @@
+import os
 import google.generativeai as genai
 from sqlalchemy.orm import Session
 from config import config
 from .models import Story, StoryRequest, StoryResponse, StoryItem, StoriesListResponse
+
+IMAGES_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "static", "images")
 
 LEVEL_DESCRIPTIONS = {
     "a1": "very simple sentences, basic vocabulary (A1 level)",
@@ -58,19 +61,47 @@ class StoryService:
             language="English",
         )
 
-    def generate_story_image(self, topic: str, content_preview: str) -> bytes:
+    def get_or_generate_story_image(self, db: Session, story_id: int, topic: str, content_preview: str) -> bytes:
         import requests as http_requests
         from urllib.parse import quote
 
+        # 1. DB'de kayıtlı path var mı?
+        story = db.query(Story).filter(Story.id == story_id).first()
+        if story and story.image_path:
+            image_abs = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", story.image_path))
+            if os.path.exists(image_abs):
+                with open(image_abs, "rb") as f:
+                    return f.read()
+
+        # 2. Yoksa Pollinations'tan üret
         prompt = (
             f"watercolor illustration for an English story about {topic}, "
             f"storytelling atmosphere, warm vivid colors, no text, no words"
         )
-        url = f"https://image.pollinations.ai/prompt/{quote(prompt)}?width=800&height=450&nologo=true&seed=42"
+        url = f"https://image.pollinations.ai/prompt/{quote(prompt)}?width=800&height=450&nologo=true&seed={story_id}"
         response = http_requests.get(url, timeout=60)
         if response.status_code != 200:
             raise Exception(f"Görsel servisi hata döndürdü: {response.status_code}")
-        return response.content
+        image_bytes = response.content
+
+        # 3. Diske kaydet
+        os.makedirs(IMAGES_DIR, exist_ok=True)
+        filename = f"{story_id}.png"
+        file_path = os.path.join(IMAGES_DIR, filename)
+        with open(file_path, "wb") as f:
+            f.write(image_bytes)
+
+        # 4. DB'yi güncelle
+        if story:
+            try:
+                story.image_path = f"static/images/{filename}"
+                db.commit()
+                print(f"[StoryService] Görsel kaydedildi: {story.image_path}")
+            except Exception as e:
+                db.rollback()
+                print(f"[StoryService] DB görsel path güncelleme hatası: {e}")
+
+        return image_bytes
 
     def get_story_by_id(self, db: Session, story_id: int) -> StoryItem | None:
         story = db.query(Story).filter(Story.id == story_id).first()

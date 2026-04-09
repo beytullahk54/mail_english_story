@@ -27,7 +27,7 @@ def get_story_image(story_id: int, db: Session = Depends(get_db)):
     if not story:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hikaye bulunamadı")
     try:
-        image_bytes = service.generate_story_image(story.topic, story.content)
+        image_bytes = service.get_or_generate_story_image(db, story_id, story.topic, story.content)
         return Response(content=image_bytes, media_type="image/png")
     except Exception as e:
         raise HTTPException(
