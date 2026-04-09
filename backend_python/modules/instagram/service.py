@@ -19,7 +19,18 @@ class InstagramService:
         self.client = Client()
         self.client.delay_range = [1, 3]
 
+    def _restore_session_from_env(self):
+        """Railway gibi ortamlarda session dosyası yoksa env var'dan yeniden oluşturur."""
+        if os.path.exists(SESSION_FILE):
+            return
+        if config.INSTAGRAM_SESSION:
+            with open(SESSION_FILE, "w") as f:
+                f.write(config.INSTAGRAM_SESSION)
+            print("[Instagram] Session env var'dan yüklendi.")
+
     def _login(self):
+        self._restore_session_from_env()
+
         if os.path.exists(SESSION_FILE):
             try:
                 self.client.load_settings(SESSION_FILE)

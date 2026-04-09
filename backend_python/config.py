@@ -32,6 +32,7 @@ class Config:
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "kahramanbey54@gmail.com")
     INSTAGRAM_USERNAME: str = os.getenv("INSTAGRAM_USERNAME", "")
     INSTAGRAM_PASSWORD: str = os.getenv("INSTAGRAM_PASSWORD", "")
+    INSTAGRAM_SESSION: str = os.getenv("INSTAGRAM_SESSION", "")
 
 
 config = Config()
