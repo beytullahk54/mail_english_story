@@ -69,7 +69,7 @@ class StoryService:
         )
         response = image_model.generate_content(
             prompt,
-            generation_config=genai.GenerationConfig(response_modalities=["IMAGE"])
+            generation_config={"response_modalities": ["IMAGE"]}
         )
         for part in response.candidates[0].content.parts:
             if part.inline_data is not None:
