@@ -1,5 +1,6 @@
-import base64
 import google.generativeai as genai
+from google import genai as genai_new
+from google.genai import types as genai_types
 from sqlalchemy.orm import Session
 from config import config
 from .models import Story, StoryRequest, StoryResponse, StoryItem, StoriesListResponse
@@ -60,23 +61,23 @@ class StoryService:
         )
 
     def generate_story_image(self, topic: str, content_preview: str) -> bytes:
-        image_model = genai.GenerativeModel("gemini-2.0-flash-exp-image-generation")
+        client = genai_new.Client(api_key=config.GEMINI_API_KEY)
         prompt = (
             f"Create a beautiful artistic illustration for an English story titled '{topic}'. "
             f"The story begins: {content_preview[:200]}. "
             f"Style: watercolor illustration, warm and vivid colors, storytelling atmosphere. "
             f"No text, no letters, no words in the image."
         )
-        response = image_model.generate_content(
-            prompt,
-            generation_config={"response_modalities": ["IMAGE"]}
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-exp-image-generation",
+            contents=prompt,
+            config=genai_types.GenerateContentConfig(
+                response_modalities=["IMAGE"]
+            ),
         )
         for part in response.candidates[0].content.parts:
             if part.inline_data is not None:
-                data = part.inline_data.data
-                if isinstance(data, str):
-                    return base64.b64decode(data)
-                return data
+                return part.inline_data.data
         raise Exception("Görsel üretilemedi: response içinde görsel bulunamadı")
 
     def get_story_by_id(self, db: Session, story_id: int) -> StoryItem | None:
