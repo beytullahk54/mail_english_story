@@ -14,15 +14,15 @@ Günlük İngilizce hikaye bülteni. Aboneler e-posta ile kaydolur, Google Gemin
 
 ## Teknoloji Stack
 
-| Katman | Teknoloji |
-|--------|-----------|
-| Frontend | Nuxt 4, Vue 3, PrimeVue 4 (Aura tema), PrimeIcons |
-| Backend (aktif) | Python FastAPI + SQLAlchemy + psycopg2 |
-| Backend (alternatif) | Go + Fiber + GORM (sadece subscriber modülü mevcut) |
-| Veritabanı | PostgreSQL |
-| AI | Google Gemini (`gemini-2.5-flash`) |
-| E-posta | Brevo SMTP API v3 |
-| Hosting | Railway / Render desteği (DATABASE_URL otomatik tanınır) |
+| Katman               | Teknoloji                                                |
+| -------------------- | -------------------------------------------------------- |
+| Frontend             | Nuxt 4, Vue 3, PrimeVue 4 (Aura tema), PrimeIcons        |
+| Backend (aktif)      | Python FastAPI + SQLAlchemy + psycopg2                   |
+| Backend (alternatif) | Go + Fiber + GORM (sadece subscriber modülü mevcut)      |
+| Veritabanı           | PostgreSQL                                               |
+| AI                   | Google Gemini (`gemini-2.5-flash`)                       |
+| E-posta              | Brevo SMTP API v3                                        |
+| Hosting              | Railway / Render desteği (DATABASE_URL otomatik tanınır) |
 
 ---
 
@@ -101,19 +101,20 @@ CREATE TABLE stories (
 
 ### Subscriber
 
-| Method | Endpoint | Auth | Açıklama |
-|--------|----------|------|----------|
-| POST | `/api/v1/subscribe` | - | Abone ol (welcome e-posta gönderir) |
-| GET | `/api/v1/unsubscribe?email=` | - | Abonelikten çık (HTML response) |
+| Method | Endpoint                     | Auth | Açıklama                            |
+| ------ | ---------------------------- | ---- | ----------------------------------- |
+| POST   | `/api/v1/subscribe`          | -    | Abone ol (welcome e-posta gönderir) |
+| GET    | `/api/v1/unsubscribe?email=` | -    | Abonelikten çık (HTML response)     |
 
 ### Story
 
-| Method | Endpoint | Auth | Açıklama |
-|--------|----------|------|----------|
-| POST | `/api/v1/story/generate` | - | Gemini ile hikaye üret |
-| GET | `/api/v1/story/list` | - | DB'den hikayeleri listele (pagination + filtre) |
+| Method | Endpoint                 | Auth | Açıklama                                        |
+| ------ | ------------------------ | ---- | ----------------------------------------------- |
+| POST   | `/api/v1/story/generate` | -    | Gemini ile hikaye üret                          |
+| GET    | `/api/v1/story/list`     | -    | DB'den hikayeleri listele (pagination + filtre) |
 
 **GET /api/v1/story/list query params:**
+
 - `page` (int, default: 1)
 - `page_size` (int, default: 10, max: 50)
 - `level` (string, opsiyonel): `a1`, `a2`, `b1`, `b2`, `beginner`, `intermediate`, `advanced`
@@ -121,19 +122,19 @@ CREATE TABLE stories (
 
 ### Mailer
 
-| Method | Endpoint | Auth | Açıklama |
-|--------|----------|------|----------|
-| POST | `/api/v1/mailer/send` | `X-Api-Token` header | Tüm seviyelere hikaye üret + e-posta gönder |
+| Method | Endpoint              | Auth                 | Açıklama                                    |
+| ------ | --------------------- | -------------------- | ------------------------------------------- |
+| POST   | `/api/v1/mailer/send` | `X-Api-Token` header | Tüm seviyelere hikaye üret + e-posta gönder |
 
 ---
 
 ## Frontend Sayfaları
 
-| Sayfa | Route | Açıklama |
-|-------|-------|----------|
-| Landing | `/` | Abone formu, çok dilli (8 dil), seviye seçimi |
-| Story Generator | `/story` | AI ile hikaye üret, kopyala |
-| Story Archive | `/stories` | DB'deki hikayeleri listele, seviye filtresi, pagination |
+| Sayfa           | Route      | Açıklama                                                |
+| --------------- | ---------- | ------------------------------------------------------- |
+| Landing         | `/`        | Abone formu, çok dilli (8 dil), seviye seçimi           |
+| Story Generator | `/story`   | AI ile hikaye üret, kopyala                             |
+| Story Archive   | `/stories` | DB'deki hikayeleri listele, seviye filtresi, pagination |
 
 **Çevre değişkeni:** `NUXT_PUBLIC_API_BASE` → backend URL'si (frontend `runtimeConfig.public.apiBase` olarak okur)
 
@@ -143,15 +144,15 @@ CREATE TABLE stories (
 
 Hikaye üretimde kullanılan seviyeler ve karşılıkları:
 
-| Değer | CEFR | Prompt tanımı |
-|-------|------|---------------|
-| `a1` | A1 | very simple sentences, basic vocabulary |
-| `beginner` | A1-A2 | simple sentences, basic vocabulary |
-| `a2` | A2 | simple sentences, basic everyday vocabulary |
-| `b1` | B1 | varied sentence structures, intermediate vocabulary |
-| `intermediate` | B1-B2 | varied sentence structures, everyday vocabulary |
-| `b2` | B2 | complex sentence structures, upper-intermediate vocabulary |
-| `advanced` | C1-C2 | complex sentences, rich vocabulary and idioms |
+| Değer          | CEFR  | Prompt tanımı                                              |
+| -------------- | ----- | ---------------------------------------------------------- |
+| `a1`           | A1    | very simple sentences, basic vocabulary                    |
+| `beginner`     | A1-A2 | simple sentences, basic vocabulary                         |
+| `a2`           | A2    | simple sentences, basic everyday vocabulary                |
+| `b1`           | B1    | varied sentence structures, intermediate vocabulary        |
+| `intermediate` | B1-B2 | varied sentence structures, everyday vocabulary            |
+| `b2`           | B2    | complex sentence structures, upper-intermediate vocabulary |
+| `advanced`     | C1-C2 | complex sentences, rich vocabulary and idioms              |
 
 > Hikayeler her zaman **İngilizce** üretilir. `language` alanı abonenin tercih ettiği arayüz dilini ifade eder.
 
