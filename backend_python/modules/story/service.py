@@ -1,6 +1,4 @@
 import google.generativeai as genai
-from google import genai as genai_new
-from google.genai import types as genai_types
 from sqlalchemy.orm import Session
 from config import config
 from .models import Story, StoryRequest, StoryResponse, StoryItem, StoriesListResponse
@@ -61,24 +59,18 @@ class StoryService:
         )
 
     def generate_story_image(self, topic: str, content_preview: str) -> bytes:
-        client = genai_new.Client(api_key=config.GEMINI_API_KEY)
+        import requests as http_requests
+        from urllib.parse import quote
+
         prompt = (
-            f"Create a beautiful artistic illustration for an English story titled '{topic}'. "
-            f"The story begins: {content_preview[:200]}. "
-            f"Style: watercolor illustration, warm and vivid colors, storytelling atmosphere. "
-            f"No text, no letters, no words in the image."
+            f"watercolor illustration for an English story about {topic}, "
+            f"storytelling atmosphere, warm vivid colors, no text, no words"
         )
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-image",
-            contents=prompt,
-            config=genai_types.GenerateContentConfig(
-                response_modalities=["IMAGE"]
-            ),
-        )
-        for part in response.candidates[0].content.parts:
-            if part.inline_data is not None:
-                return part.inline_data.data
-        raise Exception("Görsel üretilemedi: response içinde görsel bulunamadı")
+        url = f"https://image.pollinations.ai/prompt/{quote(prompt)}?width=800&height=450&nologo=true&seed=42"
+        response = http_requests.get(url, timeout=60)
+        if response.status_code != 200:
+            raise Exception(f"Görsel servisi hata döndürdü: {response.status_code}")
+        return response.content
 
     def get_story_by_id(self, db: Session, story_id: int) -> StoryItem | None:
         story = db.query(Story).filter(Story.id == story_id).first()
