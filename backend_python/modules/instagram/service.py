@@ -35,16 +35,20 @@ class InstagramService:
 
     def _build_caption(self, topic: str, level: str, content: str, story_url: str) -> str:
         emoji = LEVEL_EMOJIS.get(level.lower(), "📖")
-        preview = content[:180].rsplit(" ", 1)[0] + "..."
+        # Cümle ortasında kesmemek için en yakın nokta/boşluğa göre kes
+        preview = content[:400].rsplit(".", 1)[0] + "."
         hashtags = (
             "#EnglishStory #LearnEnglish #DailyEnglish "
             f"#{level.capitalize()}English #ESL #EnglishLearning "
             "#ReadingPractice #EnglishForBeginners"
         )
         return (
-            f"{emoji} {topic}\n\n"
+            f"{emoji} {topic}\n"
+            f"{'─' * 30}\n\n"
             f"{preview}\n\n"
-            f"🔗 Read full story: {story_url}\n\n"
+            f"📖 Devamını okumak için sayfamızı ziyaret edin:\n"
+            f"👉 {story_url}\n\n"
+            f"{'─' * 30}\n"
             f"{hashtags}"
         )
 
