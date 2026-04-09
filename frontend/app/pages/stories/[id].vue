@@ -53,6 +53,35 @@
 
         <hr class="divider" />
 
+        <!-- Illustration -->
+        <div class="illustration-section">
+          <!-- Generated image -->
+          <Transition name="fade">
+            <div v-if="imageUrl" class="illustration-wrapper">
+              <img :src="imageUrl" :alt="`Illustration for ${story.topic}`" class="story-image" />
+            </div>
+          </Transition>
+
+          <!-- Generate button -->
+          <button
+            v-if="!imageUrl"
+            class="generate-image-btn"
+            :disabled="imageLoading"
+            @click="generateImage"
+          >
+            <i :class="imageLoading ? 'pi pi-spinner pi-spin' : 'pi pi-images'" />
+            {{ imageLoading ? 'Generating illustration...' : 'Generate AI Illustration' }}
+          </button>
+
+          <!-- Regenerate button (shown after image is ready) -->
+          <button v-else class="regenerate-btn" :disabled="imageLoading" @click="generateImage">
+            <i :class="imageLoading ? 'pi pi-spinner pi-spin' : 'pi pi-refresh'" />
+            {{ imageLoading ? 'Regenerating...' : 'Regenerate' }}
+          </button>
+        </div>
+
+        <hr class="divider" />
+
         <!-- Content -->
         <p class="story-text">{{ story.content }}</p>
 
@@ -71,6 +100,8 @@ const config = useRuntimeConfig();
 const story = ref(null);
 const loading = ref(true);
 const copied = ref(false);
+const imageUrl = ref(null);
+const imageLoading = ref(false);
 
 const fetchStory = async () => {
   loading.value = true;
@@ -80,6 +111,25 @@ const fetchStory = async () => {
     story.value = null;
   } finally {
     loading.value = false;
+  }
+};
+
+const generateImage = async () => {
+  imageLoading.value = true;
+  // Revoke previous object URL to free memory
+  if (imageUrl.value) {
+    URL.revokeObjectURL(imageUrl.value);
+    imageUrl.value = null;
+  }
+  try {
+    const blob = await $fetch(`${config.public.apiBase}/api/v1/story/${route.params.id}/image`, {
+      responseType: 'blob',
+    });
+    imageUrl.value = URL.createObjectURL(blob);
+  } catch {
+    // silently fail — user can retry
+  } finally {
+    imageLoading.value = false;
   }
 };
 
@@ -251,6 +301,69 @@ onMounted(fetchStory);
   border-top: 1px solid rgba(255,255,255,0.08);
   margin: 0 0 1.5rem;
 }
+
+/* Illustration */
+.illustration-section {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.illustration-wrapper {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.story-image {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+  max-height: 420px;
+}
+
+.generate-image-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1.8rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  border: none;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+.generate-image-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99,102,241,0.35);
+}
+.generate-image-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.regenerate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: 50px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.regenerate-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+.regenerate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Fade transition */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.4s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 
 .story-text {
   font-size: 1.05rem;

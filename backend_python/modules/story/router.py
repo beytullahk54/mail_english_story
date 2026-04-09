@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from database import get_db
 from .models import StoriesListResponse, StoryItem, StoryRequest, StoryResponse
@@ -17,6 +18,22 @@ def list_stories(
 ):
     service = StoryService()
     return service.get_stories(db, page=page, page_size=page_size, level=level, language=language)
+
+
+@router.get("/{story_id}/image")
+def get_story_image(story_id: int, db: Session = Depends(get_db)):
+    service = StoryService()
+    story = service.get_story_by_id(db, story_id)
+    if not story:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hikaye bulunamadı")
+    try:
+        image_bytes = service.generate_story_image(story.topic, story.content)
+        return Response(content=image_bytes, media_type="image/png")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Görsel üretilemedi: {str(e)}",
+        )
 
 
 @router.get("/{story_id}", response_model=StoryItem, status_code=status.HTTP_200_OK)
