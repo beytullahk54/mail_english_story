@@ -69,7 +69,7 @@ class StoryService:
             f"No text, no letters, no words in the image."
         )
         response = client.models.generate_content(
-            model="gemini-2.0-flash-exp-image-generation",
+            model="gemini-2.5-flash-image",
             contents=prompt,
             config=genai_types.GenerateContentConfig(
                 response_modalities=["IMAGE"]
