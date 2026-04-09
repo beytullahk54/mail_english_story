@@ -55,29 +55,17 @@
 
         <!-- Illustration -->
         <div class="illustration-section">
-          <!-- Generated image -->
           <Transition name="fade">
-            <div v-if="imageUrl" class="illustration-wrapper">
+            <!-- Loading skeleton -->
+            <div v-if="imageLoading" class="illustration-skeleton">
+              <i class="pi pi-spinner pi-spin"></i>
+              <span>Generating illustration...</span>
+            </div>
+            <!-- Generated image -->
+            <div v-else-if="imageUrl" class="illustration-wrapper">
               <img :src="imageUrl" :alt="`Illustration for ${story.topic}`" class="story-image" />
             </div>
           </Transition>
-
-          <!-- Generate button -->
-          <button
-            v-if="!imageUrl"
-            class="generate-image-btn"
-            :disabled="imageLoading"
-            @click="generateImage"
-          >
-            <i :class="imageLoading ? 'pi pi-spinner pi-spin' : 'pi pi-images'" />
-            {{ imageLoading ? 'Generating illustration...' : 'Generate AI Illustration' }}
-          </button>
-
-          <!-- Regenerate button (shown after image is ready) -->
-          <button v-else class="regenerate-btn" :disabled="imageLoading" @click="generateImage">
-            <i :class="imageLoading ? 'pi pi-spinner pi-spin' : 'pi pi-refresh'" />
-            {{ imageLoading ? 'Regenerating...' : 'Regenerate' }}
-          </button>
         </div>
 
         <hr class="divider" />
@@ -150,7 +138,10 @@ useHead(computed(() => ({
   title: story.value ? `${story.value.topic} — English Story` : 'Story — English Story'
 })));
 
-onMounted(fetchStory);
+onMounted(async () => {
+  await fetchStory();
+  if (story.value) generateImage();
+});
 </script>
 
 <style scoped>
@@ -325,41 +316,21 @@ onMounted(fetchStory);
   max-height: 420px;
 }
 
-.generate-image-btn {
-  display: inline-flex;
+.illustration-skeleton {
+  width: 100%;
+  min-height: 200px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px dashed rgba(255,255,255,0.12);
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.8rem 1.8rem;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  border: none;
-  color: #fff;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-}
-.generate-image-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(99,102,241,0.35);
-}
-.generate-image-btn:disabled { opacity: 0.65; cursor: not-allowed; }
-
-.regenerate-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 1rem;
-  border-radius: 50px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.15);
+  justify-content: center;
+  gap: 0.75rem;
   color: var(--text-muted);
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background 0.2s, opacity 0.2s;
+  font-size: 0.9rem;
 }
-.regenerate-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
-.regenerate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.illustration-skeleton i { font-size: 1.8rem; opacity: 0.5; }
 
 /* Fade transition */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.4s; }
