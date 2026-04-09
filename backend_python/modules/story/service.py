@@ -101,6 +101,20 @@ class StoryService:
                 db.rollback()
                 print(f"[StoryService] DB görsel path güncelleme hatası: {e}")
 
+        # 5. Instagram'a paylaş (hata olursa sessizce geç)
+        try:
+            from modules.instagram.service import InstagramService
+            instagram = InstagramService()
+            instagram.post_story_image(
+                image_path=file_path,
+                topic=topic,
+                level=story.level if story else "beginner",
+                content=content_preview,
+                story_id=story_id,
+            )
+        except Exception as e:
+            print(f"[StoryService] Instagram paylaşım hatası: {e}")
+
         return image_bytes
 
     def get_story_by_id(self, db: Session, story_id: int) -> StoryItem | None:

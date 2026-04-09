@@ -30,6 +30,8 @@ class Config:
     APP_SECRET_TOKEN: str = os.getenv("APP_SECRET_TOKEN", "")
     APP_BASE_URL: str = os.getenv("APP_BASE_URL", "https://englishstory.kodsey.com")
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "kahramanbey54@gmail.com")
+    INSTAGRAM_USERNAME: str = os.getenv("INSTAGRAM_USERNAME", "")
+    INSTAGRAM_PASSWORD: str = os.getenv("INSTAGRAM_PASSWORD", "")
 
 
 config = Config()
