@@ -5,6 +5,10 @@ Sadece bir kez çalıştırılır. Sonrasında servis session dosyasını kullan
 Kullanım:
     cd backend_python
     python instagram_login.py
+
+IP engeli varsa proxy ile:
+    INSTAGRAM_PROXY=socks5://user:pass@host:port python instagram_login.py
+    INSTAGRAM_PROXY=http://user:pass@host:port python instagram_login.py
 """
 
 import os
@@ -17,6 +21,7 @@ load_dotenv()
 
 USERNAME = os.getenv("INSTAGRAM_USERNAME", "")
 PASSWORD = os.getenv("INSTAGRAM_PASSWORD", "")
+PROXY    = os.getenv("INSTAGRAM_PROXY", "")
 SESSION_FILE = "instagram_session.json"
 
 if not USERNAME or not PASSWORD:
@@ -25,6 +30,13 @@ if not USERNAME or not PASSWORD:
 
 client = Client()
 client.delay_range = [1, 3]
+
+if PROXY:
+    client.set_proxy(PROXY)
+    print(f"🌐 Proxy kullanılıyor: {PROXY}")
+else:
+    print("ℹ️  Proxy yok. IP engeli hatası alırsan:")
+    print("   INSTAGRAM_PROXY=socks5://user:pass@host:port python instagram_login.py")
 
 # Var olan session'ı dene
 if os.path.exists(SESSION_FILE):
@@ -51,8 +63,6 @@ except TwoFactorRequired:
 
 except ChallengeRequired:
     print("⚠️  Instagram güvenlik doğrulaması istiyor...")
-    api_path = client.last_json.get("challenge", {}).get("api_path", "")
-    print(f"   Challenge path: {api_path}")
     client.challenge_resolve(client.last_json)
     choice = input("   Doğrulama yöntemi (0=SMS, 1=Email): ").strip()
     client.challenge_send_code(int(choice))
@@ -67,4 +77,10 @@ except LoginRequired as e:
 
 except Exception as e:
     print(f"❌ Beklenmeyen hata: {e}")
+    print()
+    print("💡 IP engeli mi? Şunları dene:")
+    print("   1. Mobil hotspot'a geç ve tekrar çalıştır")
+    print("   2. VPN'i kapat/değiştir")
+    print("   3. Proxy kullan:")
+    print("      INSTAGRAM_PROXY=socks5://user:pass@host:port python instagram_login.py")
     sys.exit(1)
