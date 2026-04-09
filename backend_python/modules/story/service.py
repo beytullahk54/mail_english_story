@@ -1,4 +1,7 @@
 import os
+import textwrap
+from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
 import google.generativeai as genai
 from sqlalchemy.orm import Session
 from config import config
@@ -61,6 +64,60 @@ class StoryService:
             language="English",
         )
 
+    def _add_text_overlay(self, image_bytes: bytes, text: str) -> bytes:
+        img = Image.open(BytesIO(image_bytes)).convert("RGBA")
+        w, h = img.size
+
+        # Yazı tipi — sistem fontlarını dene, bulamazsan PIL default'a dön
+        font_size = max(22, w // 28)
+        font = None
+        for font_path in [
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/System/Library/Fonts/Helvetica.ttc",
+            "/System/Library/Fonts/Arial.ttf",
+            "C:/Windows/Fonts/arialbd.ttf",
+        ]:
+            if os.path.exists(font_path):
+                try:
+                    font = ImageFont.truetype(font_path, font_size)
+                    break
+                except Exception:
+                    continue
+        if font is None:
+            font = ImageFont.load_default()
+
+        # Metni satırlara böl (max ~55 karakter)
+        wrapped = textwrap.fill(text, width=55)
+        lines = wrapped.split("\n")
+
+        draw_tmp = ImageDraw.Draw(img)
+        line_height = font_size + 8
+        padding = 20
+        banner_h = line_height * len(lines) + padding * 2
+
+        # Alt kısımda yarı saydam koyu şerit
+        overlay = Image.new("RGBA", (w, banner_h), (0, 0, 0, 0))
+        draw_ov = ImageDraw.Draw(overlay)
+        draw_ov.rectangle([(0, 0), (w, banner_h)], fill=(10, 10, 20, 195))
+        img.paste(overlay, (0, h - banner_h), overlay)
+
+        # Metni yaz
+        draw = ImageDraw.Draw(img)
+        y = h - banner_h + padding
+        for line in lines:
+            bbox = draw.textbbox((0, 0), line, font=font)
+            text_w = bbox[2] - bbox[0]
+            x = (w - text_w) // 2
+            # Hafif gölge
+            draw.text((x + 2, y + 2), line, font=font, fill=(0, 0, 0, 160))
+            draw.text((x, y), line, font=font, fill=(255, 248, 220, 255))
+            y += line_height
+
+        out = BytesIO()
+        img.convert("RGB").save(out, format="PNG")
+        return out.getvalue()
+
     def get_or_generate_story_image(self, db: Session, story_id: int, topic: str, content_preview: str) -> bytes:
         import requests as http_requests
         from urllib.parse import quote
@@ -84,14 +141,21 @@ class StoryService:
             raise Exception(f"Görsel servisi hata döndürdü: {response.status_code}")
         image_bytes = response.content
 
-        # 3. Diske kaydet
+        # 3. İlk cümleyi al ve görsele yaz
+        first_sentence = content_preview.strip().split(".")[0].strip() + "."
+        try:
+            image_bytes = self._add_text_overlay(image_bytes, first_sentence)
+        except Exception as e:
+            print(f"[StoryService] Metin overlay hatası: {e}")
+
+        # 5. Diske kaydet
         os.makedirs(IMAGES_DIR, exist_ok=True)
         filename = f"{story_id}.png"
         file_path = os.path.join(IMAGES_DIR, filename)
         with open(file_path, "wb") as f:
             f.write(image_bytes)
 
-        # 4. DB'yi güncelle
+        # 6. DB'yi güncelle
         if story:
             try:
                 story.image_path = f"static/images/{filename}"
@@ -101,7 +165,7 @@ class StoryService:
                 db.rollback()
                 print(f"[StoryService] DB görsel path güncelleme hatası: {e}")
 
-        # 5. Instagram'a paylaş (hata olursa sessizce geç)
+        # 7. Instagram'a paylaş (hata olursa sessizce geç)
         try:
             from modules.instagram.service import InstagramService
             instagram = InstagramService()
