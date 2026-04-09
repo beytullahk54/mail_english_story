@@ -46,7 +46,7 @@ def get_story(story_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/generate", response_model=StoryResponse, status_code=status.HTTP_200_OK)
-def generate_story(request: StoryRequest):
+def generate_story(request: StoryRequest, db: Session = Depends(get_db)):
     if not request.topic.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -61,7 +61,7 @@ def generate_story(request: StoryRequest):
 
     service = StoryService()
     try:
-        return service.generate_story(request)
+        return service.generate_story(request, db=db)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

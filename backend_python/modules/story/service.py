@@ -20,10 +20,9 @@ class StoryService:
         genai.configure(api_key=config.GEMINI_API_KEY)
         self.model = genai.GenerativeModel("gemini-2.5-flash")
 
-    def generate_story(self, request: StoryRequest) -> StoryResponse:
+    def generate_story(self, request: StoryRequest, db: Session | None = None) -> StoryResponse:
         level_desc = LEVEL_DESCRIPTIONS.get(request.level.lower(), "simple sentences, basic vocabulary")
-        
-        # We always generate English stories as requested
+
         prompt = (
             f"Write an English story about '{request.topic}'. "
             f"The story should be approximately {request.word_count} words long. "
@@ -34,11 +33,30 @@ class StoryService:
         response = self.model.generate_content(prompt)
         story_text = response.text.strip()
 
+        # DB'ye kaydet
+        story_id = None
+        if db is not None:
+            try:
+                db_story = Story(
+                    topic=request.topic,
+                    level=request.level,
+                    language="English",
+                    content=story_text,
+                )
+                db.add(db_story)
+                db.commit()
+                db.refresh(db_story)
+                story_id = db_story.id
+            except Exception as e:
+                db.rollback()
+                print(f"[StoryService] DB kayıt hatası: {e}")
+
         return StoryResponse(
+            id=story_id,
             story=story_text,
             topic=request.topic,
             level=request.level,
-            language="English" # The content language is always English
+            language="English",
         )
 
     def generate_story_image(self, topic: str, content_preview: str) -> bytes:

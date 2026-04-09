@@ -27,6 +27,7 @@ class StoryRequest(BaseModel):
 
 
 class StoryResponse(BaseModel):
+    id: int | None = None
     story: str
     topic: str
     level: str
