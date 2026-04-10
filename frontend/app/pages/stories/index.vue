@@ -350,14 +350,20 @@ onMounted(fetchStories);
 
 .story-preview {
   margin: 0;
-  padding: 0 1.5rem 1.5rem;
+  padding: 0.25rem 1.5rem 1.75rem;
   font-size: 0.9rem;
   line-height: 1.7;
   color: var(--text-muted);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .story-preview {
+    padding-bottom: 2rem;
+  }
 }
 
 /* Pagination */
