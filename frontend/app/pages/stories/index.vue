@@ -285,10 +285,10 @@ onMounted(fetchStories);
 }
 
 .story-card-header {
-  padding: 1.25rem 1.5rem 0.75rem;
+  padding: 1.5rem 1.5rem 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
   position: relative;
 }
 
@@ -350,7 +350,7 @@ onMounted(fetchStories);
 
 .story-preview {
   margin: 0;
-  padding: 0 1.5rem 1.25rem;
+  padding: 0 1.5rem 1.5rem;
   font-size: 0.9rem;
   line-height: 1.7;
   color: var(--text-muted);
@@ -393,7 +393,7 @@ onMounted(fetchStories);
 }
 
 @media (max-width: 640px) {
-  .page-container { padding: 1rem; }
+  .page-container { padding: 1rem 1rem 4rem; }
   .header-title h1 { font-size: 1.6rem; }
 }
 </style>
