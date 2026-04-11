@@ -158,4 +158,23 @@ class MailerService:
                     print(f"[Mailer] {email} gönderilemedi: {e}")
                     total_failed += 1
 
+            # Mailler gittikten sonra Instagram'a paylaş (sadece DB'ye kaydedildiyse)
+            if db_story and db_story.id:
+                try:
+                    from modules.instagram.service import InstagramService
+                    print(f"[Mailer] {level.upper()} için Instagram paylaşımı başlatılıyor...")
+                    self.story_service.get_or_generate_story_image(
+                        self.db, db_story.id, current_topic, level_story
+                    )
+                    instagram = InstagramService()
+                    result = instagram.post(
+                        story_id=db_story.id,
+                        topic=current_topic,
+                        level=level,
+                        content=level_story,
+                    )
+                    print(f"[Mailer] Instagram paylaşıldı: {result.get('permalink', '')}")
+                except Exception as e:
+                    print(f"[Mailer] Instagram paylaşım hatası ({level}): {e}")
+
         return SendStoryResponse(sent=total_sent, failed=total_failed, recipients=all_recipients)
