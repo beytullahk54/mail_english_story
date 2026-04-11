@@ -131,22 +131,20 @@ class StoryService:
                     return f.read()
 
         # 2. Yoksa Pollinations'tan üret
+        # Hikayenin ilk 2 paragrafından bağlam çıkar
+        paragraphs = [p.strip() for p in content_preview.strip().split("\n\n") if p.strip()]
+        story_context = " ".join(paragraphs[:2])[:400]  # max 400 karakter
+
         prompt = (
-            f"watercolor illustration for an English story about {topic}, "
-            f"storytelling atmosphere, warm vivid colors, no text, no words"
+            f"watercolor illustration: {story_context}. "
+            f"Topic: {topic}. "
+            f"Storytelling atmosphere, warm vivid colors, no text, no words, no letters"
         )
-        url = f"https://image.pollinations.ai/prompt/{quote(prompt)}?width=800&height=450&nologo=true&seed={story_id}"
+        url = f"https://image.pollinations.ai/prompt/{quote(prompt)}?width=800&height=800&nologo=true&seed={story_id}"
         response = http_requests.get(url, timeout=60)
         if response.status_code != 200:
             raise Exception(f"Görsel servisi hata döndürdü: {response.status_code}")
         image_bytes = response.content
-
-        # 3. İlk cümleyi al ve görsele yaz
-        first_sentence = content_preview.strip().split(".")[0].strip() + "."
-        try:
-            image_bytes = self._add_text_overlay(image_bytes, first_sentence)
-        except Exception as e:
-            print(f"[StoryService] Metin overlay hatası: {e}")
 
         # 5. Diske kaydet (JPEG — Instagram uyumlu)
         os.makedirs(IMAGES_DIR, exist_ok=True)
