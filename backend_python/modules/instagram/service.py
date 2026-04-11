@@ -49,7 +49,8 @@ class InstagramService:
         if not token or not user_id:
             raise ValueError("INSTAGRAM_TOKEN veya INSTAGRAM_USER_ID eksik (.env)")
 
-        image_url = f"{config.APP_BASE_URL}/static/images/{story_id}.jpg"
+        base = config.BACKEND_URL or config.APP_BASE_URL
+        image_url = f"{base}/static/images/{story_id}.jpg"
         story_url = f"{config.APP_BASE_URL}/stories/{story_id}"
         caption = self._build_caption(topic, level, content, story_url)
 
