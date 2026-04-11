@@ -115,7 +115,7 @@ class StoryService:
             y += line_height
 
         out = BytesIO()
-        img.convert("RGB").save(out, format="PNG")
+        img.convert("RGB").save(out, format="JPEG", quality=92)
         return out.getvalue()
 
     def get_or_generate_story_image(self, db: Session, story_id: int, topic: str, content_preview: str) -> bytes:
@@ -148,10 +148,16 @@ class StoryService:
         except Exception as e:
             print(f"[StoryService] Metin overlay hatası: {e}")
 
-        # 5. Diske kaydet
+        # 5. Diske kaydet (JPEG — Instagram uyumlu)
         os.makedirs(IMAGES_DIR, exist_ok=True)
-        filename = f"{story_id}.png"
+        filename = f"{story_id}.jpg"
         file_path = os.path.join(IMAGES_DIR, filename)
+        # JPEG olarak yeniden encode et
+        from PIL import Image as PilImage
+        img_obj = PilImage.open(BytesIO(image_bytes)).convert("RGB")
+        jpeg_buf = BytesIO()
+        img_obj.save(jpeg_buf, format="JPEG", quality=92)
+        image_bytes = jpeg_buf.getvalue()
         with open(file_path, "wb") as f:
             f.write(image_bytes)
 
