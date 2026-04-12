@@ -179,6 +179,72 @@ class StoryService:
 
         return image_bytes
 
+    def generate_carousel_images(self, story_id: int, topic: str, content: str) -> list[str]:
+        """
+        Hikayenin ilk 5 cümlesini ayrı ayrı görsele dönüştürür.
+        Her cümle için Pollinations'tan görsel üretir ve cümleyi overlay olarak yazar.
+        Döner: ["static/images/{id}_slide_1.jpg", ..., "static/images/{id}_slide_5.jpg"]
+        Cache: Tüm dosyalar diskte mevcutsa tekrar üretmez.
+        """
+        import requests as http_requests
+        from urllib.parse import quote
+
+        sentences = [s.strip() for s in content.split(".") if s.strip()]
+        sentences = sentences[:5]  # İlk 5 cümle
+
+        os.makedirs(IMAGES_DIR, exist_ok=True)
+        paths = []
+
+        for i, sentence in enumerate(sentences, start=1):
+            filename = f"{story_id}_slide_{i}.jpg"
+            file_path = os.path.join(IMAGES_DIR, filename)
+
+            # Cache: dosya zaten varsa atla
+            if os.path.exists(file_path):
+                print(f"[StoryService] Slide {i} cache'den yüklendi.")
+                paths.append(f"static/images/{filename}")
+                continue
+
+            # Her cümle için konuya özel görsel üret
+            prompt = (
+                f"watercolor illustration: {sentence}. "
+                f"Topic: {topic}. "
+                f"Storytelling atmosphere, warm vivid colors, no text, no words, no letters"
+            )
+            seed = story_id * 10 + i
+            url = (
+                f"https://image.pollinations.ai/prompt/{quote(prompt)}"
+                f"?width=800&height=800&nologo=true&seed={seed}"
+            )
+            try:
+                response = http_requests.get(url, timeout=60)
+                if response.status_code != 200:
+                    raise Exception(f"HTTP {response.status_code}")
+                image_bytes = response.content
+            except Exception as e:
+                print(f"[StoryService] Slide {i} görsel üretim hatası: {e}")
+                continue
+
+            # Cümleyi görselin üstüne yaz
+            try:
+                image_bytes = self._add_text_overlay(image_bytes, sentence + ".")
+            except Exception as e:
+                print(f"[StoryService] Slide {i} overlay hatası: {e}")
+
+            # JPEG olarak kaydet
+            try:
+                img_obj = Image.open(BytesIO(image_bytes)).convert("RGB")
+                jpeg_buf = BytesIO()
+                img_obj.save(jpeg_buf, format="JPEG", quality=92)
+                with open(file_path, "wb") as f:
+                    f.write(jpeg_buf.getvalue())
+                print(f"[StoryService] Slide {i} kaydedildi: {filename}")
+                paths.append(f"static/images/{filename}")
+            except Exception as e:
+                print(f"[StoryService] Slide {i} kayıt hatası: {e}")
+
+        return paths
+
     def get_story_by_id(self, db: Session, story_id: int) -> StoryItem | None:
         story = db.query(Story).filter(Story.id == story_id).first()
         if not story:

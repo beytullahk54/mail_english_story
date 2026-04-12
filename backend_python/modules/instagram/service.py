@@ -89,11 +89,70 @@ class InstagramService:
 
         return publish_data["id"]
 
+    def _post_carousel(self, user_id: str, token: str, image_urls: list[str], caption: str) -> str:
+        """
+        Birden fazla görseli carousel post olarak yayınlar. Post ID döner.
+        """
+        # 1. Her görsel için ayrı carousel item container oluştur
+        item_ids = []
+        for img_url in image_urls:
+            container_resp = requests.post(
+                f"{GRAPH_API}/{user_id}/media",
+                params={
+                    "image_url": img_url,
+                    "is_carousel_item": "true",
+                    "access_token": token,
+                },
+                timeout=30,
+            )
+            data = container_resp.json()
+            if "id" not in data:
+                error = data.get("error", {}).get("message", str(data))
+                raise Exception(f"Carousel item container oluşturulamadı: {error}")
+            item_ids.append(data["id"])
+            print(f"[Instagram] Carousel item container: {data['id']}")
+
+        # 2. Ana carousel container oluştur
+        carousel_resp = requests.post(
+            f"{GRAPH_API}/{user_id}/media",
+            params={
+                "media_type": "CAROUSEL",
+                "children": ",".join(item_ids),
+                "caption": caption,
+                "access_token": token,
+            },
+            timeout=30,
+        )
+        carousel_data = carousel_resp.json()
+        if "id" not in carousel_data:
+            error = carousel_data.get("error", {}).get("message", str(carousel_data))
+            raise Exception(f"Carousel container oluşturulamadı: {error}")
+
+        carousel_id = carousel_data["id"]
+        print(f"[Instagram] Carousel container: {carousel_id}")
+
+        # 3. FINISHED bekle ve yayınla
+        self._wait_until_ready(carousel_id, token)
+
+        publish_resp = requests.post(
+            f"{GRAPH_API}/{user_id}/media_publish",
+            params={"creation_id": carousel_id, "access_token": token},
+            timeout=30,
+        )
+        publish_data = publish_resp.json()
+        if "id" not in publish_data:
+            error = publish_data.get("error", {}).get("message", str(publish_data))
+            raise Exception(f"Carousel yayınlanamadı: {error}")
+
+        return publish_data["id"]
+
     def post(self, story_id: int, topic: str, level: str, content: str) -> dict:
         """
-        Hikayeyi Instagram feed'e ve Story'ye gönderir.
+        Hikayenin 5 cümlesini carousel feed post + Story olarak paylaşır.
         Döndürür: {"success": True, "post_id": "...", "permalink": "...", "ig_story_id": "..."}
         """
+        from modules.story.service import StoryService
+
         token = config.INSTAGRAM_TOKEN
         user_id = config.INSTAGRAM_USER_ID
 
@@ -101,18 +160,23 @@ class InstagramService:
             raise ValueError("INSTAGRAM_TOKEN veya INSTAGRAM_USER_ID eksik (.env)")
 
         base = config.BACKEND_URL or config.APP_BASE_URL
-        image_url = f"{base}/static/images/{story_id}.jpg"
         story_url = f"{config.APP_BASE_URL}/stories/{story_id}"
         caption = self._build_caption(topic, level, content, story_url)
 
-        # 1. Feed post
-        post_id = self._create_and_publish(user_id, token, {
-            "image_url": image_url,
-            "caption": caption,
-        })
-        print(f"[Instagram] Feed post paylaşıldı: {post_id}")
+        # 1. 5 ayrı slide görseli üret
+        story_service = StoryService()
+        slide_paths = story_service.generate_carousel_images(story_id, topic, content)
+        if not slide_paths:
+            raise Exception("Hiç carousel görseli üretilemedi")
 
-        # 2. Permalink al
+        image_urls = [f"{base}/{path}" for path in slide_paths]
+        print(f"[Instagram] {len(image_urls)} slide görseli hazır.")
+
+        # 2. Carousel feed post
+        post_id = self._post_carousel(user_id, token, image_urls, caption)
+        print(f"[Instagram] Carousel feed post paylaşıldı: {post_id}")
+
+        # 3. Permalink al
         permalink_resp = requests.get(
             f"{GRAPH_API}/{post_id}",
             params={"fields": "permalink", "access_token": token},
@@ -120,16 +184,15 @@ class InstagramService:
         )
         permalink = permalink_resp.json().get("permalink", "")
 
-        # 3. Instagram Story olarak da paylaş
+        # 4. İlk slide ile Story paylaş
         ig_story_id = None
         try:
             ig_story_id = self._create_and_publish(user_id, token, {
-                "image_url": image_url,
+                "image_url": image_urls[0],
                 "media_type": "STORIES",
             })
             print(f"[Instagram] Story paylaşıldı: {ig_story_id}")
         except Exception as e:
-            # Story başarısız olsa bile feed post geçerli sayılır
             print(f"[Instagram] Story paylaşım hatası: {e}")
 
         return {
@@ -137,4 +200,5 @@ class InstagramService:
             "post_id": post_id,
             "permalink": permalink,
             "ig_story_id": ig_story_id,
+            "slides": len(image_urls),
         }
