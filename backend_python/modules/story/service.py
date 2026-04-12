@@ -146,6 +146,14 @@ class StoryService:
             raise Exception(f"Görsel servisi hata döndürdü: {response.status_code}")
         image_bytes = response.content
 
+        # 3. İlk 2 cümleyi al ve görsele yaz
+        sentences = [s.strip() for s in content_preview.strip().split(".") if s.strip()]
+        overlay_text = ". ".join(sentences[:2]) + "."
+        try:
+            image_bytes = self._add_text_overlay(image_bytes, overlay_text)
+        except Exception as e:
+            print(f"[StoryService] Metin overlay hatası: {e}")
+
         # 5. Diske kaydet (JPEG — Instagram uyumlu)
         os.makedirs(IMAGES_DIR, exist_ok=True)
         filename = f"{story_id}.jpg"

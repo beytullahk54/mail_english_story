@@ -3,9 +3,9 @@ Instagram Graph API ile gönderi paylaşımı.
 Business/Creator hesap + Facebook App token gerektirir.
 
 Akış:
-  1. Görselin public URL'ini al (APP_BASE_URL/static/images/{id}.png)
-  2. Media container oluştur  → POST /{user_id}/media
-  3. Yayınla               → POST /{user_id}/media_publish
+  1. Görselin public URL'ini al (BACKEND_URL/static/images/{id}.jpg)
+  2. Feed post: container oluştur → yayınla
+  3. Story post: container oluştur (media_type=STORIES) → yayınla
 """
 
 import requests
@@ -17,7 +17,7 @@ GRAPH_API = "https://graph.instagram.com/v21.0"
 class InstagramService:
 
     def _build_caption(self, topic: str, level: str, content: str, story_url: str) -> str:
-        # İlk 3 cümleyi al (~300 karakter)
+        # İlk 3 cümleyi al (~350 karakter)
         sentences = [s.strip() for s in content.split(".") if s.strip()]
         preview = ""
         for s in sentences[:3]:
@@ -37,11 +37,34 @@ class InstagramService:
         )
         return caption
 
+    def _create_and_publish(self, user_id: str, token: str, params: dict) -> str:
+        """Container oluştur ve yayınla. Post ID döner."""
+        container_resp = requests.post(
+            f"{GRAPH_API}/{user_id}/media",
+            params={**params, "access_token": token},
+            timeout=30,
+        )
+        container_data = container_resp.json()
+        if "id" not in container_data:
+            error = container_data.get("error", {}).get("message", str(container_data))
+            raise Exception(f"Media container oluşturulamadı: {error}")
+
+        publish_resp = requests.post(
+            f"{GRAPH_API}/{user_id}/media_publish",
+            params={"creation_id": container_data["id"], "access_token": token},
+            timeout=30,
+        )
+        publish_data = publish_resp.json()
+        if "id" not in publish_data:
+            error = publish_data.get("error", {}).get("message", str(publish_data))
+            raise Exception(f"Gönderi yayınlanamadı: {error}")
+
+        return publish_data["id"]
+
     def post(self, story_id: int, topic: str, level: str, content: str) -> dict:
         """
-        Hikayeyi Instagram'a gönderir.
-        Döndürür: {"success": True, "post_id": "...", "permalink": "..."}
-        Hata durumunda exception fırlatır.
+        Hikayeyi Instagram feed'e ve Story'ye gönderir.
+        Döndürür: {"success": True, "post_id": "...", "permalink": "...", "ig_story_id": "..."}
         """
         token = config.INSTAGRAM_TOKEN
         user_id = config.INSTAGRAM_USER_ID
@@ -54,42 +77,14 @@ class InstagramService:
         story_url = f"{config.APP_BASE_URL}/stories/{story_id}"
         caption = self._build_caption(topic, level, content, story_url)
 
-        # 1. Media container oluştur
-        container_resp = requests.post(
-            f"{GRAPH_API}/{user_id}/media",
-            params={
-                "image_url": image_url,
-                "caption": caption,
-                "access_token": token,
-            },
-            timeout=30,
-        )
-        container_data = container_resp.json()
+        # 1. Feed post
+        post_id = self._create_and_publish(user_id, token, {
+            "image_url": image_url,
+            "caption": caption,
+        })
+        print(f"[Instagram] Feed post paylaşıldı: {post_id}")
 
-        if "id" not in container_data:
-            error = container_data.get("error", {}).get("message", str(container_data))
-            raise Exception(f"Media container oluşturulamadı: {error}")
-
-        creation_id = container_data["id"]
-
-        # 2. Yayınla
-        publish_resp = requests.post(
-            f"{GRAPH_API}/{user_id}/media_publish",
-            params={
-                "creation_id": creation_id,
-                "access_token": token,
-            },
-            timeout=30,
-        )
-        publish_data = publish_resp.json()
-
-        if "id" not in publish_data:
-            error = publish_data.get("error", {}).get("message", str(publish_data))
-            raise Exception(f"Gönderi yayınlanamadı: {error}")
-
-        post_id = publish_data["id"]
-
-        # 3. Permalink al
+        # 2. Permalink al
         permalink_resp = requests.get(
             f"{GRAPH_API}/{post_id}",
             params={"fields": "permalink", "access_token": token},
@@ -97,4 +92,21 @@ class InstagramService:
         )
         permalink = permalink_resp.json().get("permalink", "")
 
-        return {"success": True, "post_id": post_id, "permalink": permalink}
+        # 3. Instagram Story olarak da paylaş
+        ig_story_id = None
+        try:
+            ig_story_id = self._create_and_publish(user_id, token, {
+                "image_url": image_url,
+                "media_type": "STORIES",
+            })
+            print(f"[Instagram] Story paylaşıldı: {ig_story_id}")
+        except Exception as e:
+            # Story başarısız olsa bile feed post geçerli sayılır
+            print(f"[Instagram] Story paylaşım hatası: {e}")
+
+        return {
+            "success": True,
+            "post_id": post_id,
+            "permalink": permalink,
+            "ig_story_id": ig_story_id,
+        }
