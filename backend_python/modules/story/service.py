@@ -288,9 +288,9 @@ class StoryService:
                 print(f"[StoryService] Slide {i} görsel üretim hatası: {e}")
                 continue
 
-            # Cümleyi ve slide numarasını görsele yaz
+            # Cümleyi ve hikaye numarasını görsele yaz
             try:
-                slide_label = f"{i}/{len(sentences)}"
+                slide_label = f"#{story_id}"
                 image_bytes = self._add_text_overlay(image_bytes, sentence + ".", slide_label=slide_label)
             except Exception as e:
                 print(f"[StoryService] Slide {i} overlay hatası: {e}")
