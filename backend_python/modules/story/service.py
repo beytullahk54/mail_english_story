@@ -64,7 +64,7 @@ class StoryService:
             language="English",
         )
 
-    def _add_text_overlay(self, image_bytes: bytes, text: str) -> bytes:
+    def _add_text_overlay(self, image_bytes: bytes, text: str, slide_label: str | None = None) -> bytes:
         img = Image.open(BytesIO(image_bytes)).convert("RGBA")
         w, h = img.size
 
@@ -138,6 +138,46 @@ class StoryService:
             draw.text((x + 2, y + 2), line, font=font, fill=(0, 0, 0, 160))
             draw.text((x, y), line, font=font, fill=(255, 248, 220, 255))
             y += line_height
+
+        # Sol üst köşeye slide numarası ekle
+        if slide_label:
+            badge_font_size = max(28, w // 20)
+            badge_font = None
+            for fp in [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/System/Library/Fonts/Helvetica.ttc",
+            ]:
+                if os.path.exists(fp):
+                    try:
+                        badge_font = ImageFont.truetype(fp, badge_font_size)
+                        break
+                    except Exception:
+                        continue
+            if badge_font is None:
+                try:
+                    badge_font = ImageFont.load_default(size=badge_font_size)
+                except TypeError:
+                    badge_font = ImageFont.load_default()
+
+            draw2 = ImageDraw.Draw(img)
+            pad = 14
+            bbox = draw2.textbbox((0, 0), slide_label, font=badge_font)
+            bw = bbox[2] - bbox[0] + pad * 2
+            bh = bbox[3] - bbox[1] + pad * 2
+            margin = 20
+            # Yarı saydam arka plan pill
+            draw2.rounded_rectangle(
+                [margin, margin, margin + bw, margin + bh],
+                radius=bh // 2,
+                fill=(10, 10, 20, 180),
+            )
+            draw2.text(
+                (margin + pad, margin + pad),
+                slide_label,
+                font=badge_font,
+                fill=(255, 255, 255, 255),
+            )
 
         out = BytesIO()
         img.convert("RGB").save(out, format="JPEG", quality=92)
@@ -237,7 +277,7 @@ class StoryService:
             seed = story_id * 10 + i
             url = (
                 f"https://image.pollinations.ai/prompt/{quote(prompt)}"
-                f"?width=800&height=800&nologo=true&seed={seed}"
+                f"?width=800&height=1000&nologo=true&seed={seed}"
             )
             try:
                 response = http_requests.get(url, timeout=60)
@@ -248,9 +288,10 @@ class StoryService:
                 print(f"[StoryService] Slide {i} görsel üretim hatası: {e}")
                 continue
 
-            # Cümleyi görselin üstüne yaz
+            # Cümleyi ve slide numarasını görsele yaz
             try:
-                image_bytes = self._add_text_overlay(image_bytes, sentence + ".")
+                slide_label = f"{i}/{len(sentences)}"
+                image_bytes = self._add_text_overlay(image_bytes, sentence + ".", slide_label=slide_label)
             except Exception as e:
                 print(f"[StoryService] Slide {i} overlay hatası: {e}")
 
