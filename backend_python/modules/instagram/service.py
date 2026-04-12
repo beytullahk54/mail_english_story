@@ -93,12 +93,13 @@ class InstagramService:
         """
         Birden fazla görseli carousel post olarak yayınlar. Post ID döner.
         """
-        # 1. Her görsel için ayrı carousel item container oluştur ve FINISHED bekle
+        # 1. Her görsel için ayrı carousel item container oluştur
         item_ids = []
         for i, img_url in enumerate(image_urls, start=1):
+            print(f"[Instagram] Slide {i} için görsel URL: {img_url}")
             container_resp = requests.post(
                 f"{GRAPH_API}/{user_id}/media",
-                params={
+                data={
                     "image_url": img_url,
                     "is_carousel_item": "true",
                     "access_token": token,
@@ -106,25 +107,23 @@ class InstagramService:
                 timeout=30,
             )
             data = container_resp.json()
+            print(f"[Instagram] Slide {i} API yanıtı: {data}")
             if "id" not in data:
                 error = data.get("error", {}).get("message", str(data))
                 print(f"[Instagram] Slide {i} container hatası: {error}")
                 continue
-            print(f"[Instagram] Slide {i} container oluşturuldu: {data['id']}, hazır olması bekleniyor...")
-            try:
-                self._wait_until_ready(data["id"], token)
-                item_ids.append(data["id"])
-                print(f"[Instagram] Slide {i} hazır.")
-            except Exception as e:
-                print(f"[Instagram] Slide {i} hazır olmadı: {e}")
+            item_ids.append(data["id"])
+            print(f"[Instagram] Slide {i} container oluşturuldu: {data['id']}")
+            time.sleep(3)  # Rate limit koruması
 
         if len(item_ids) < 2:
             raise Exception(f"Carousel için en az 2 görsel gerekli, sadece {len(item_ids)} hazırlandı")
 
         # 2. Ana carousel container oluştur
+        print(f"[Instagram] Carousel oluşturuluyor, {len(item_ids)} item: {item_ids}")
         carousel_resp = requests.post(
             f"{GRAPH_API}/{user_id}/media",
-            params={
+            data={
                 "media_type": "CAROUSEL",
                 "children": ",".join(item_ids),
                 "caption": caption,
@@ -133,6 +132,7 @@ class InstagramService:
             timeout=30,
         )
         carousel_data = carousel_resp.json()
+        print(f"[Instagram] Carousel API yanıtı: {carousel_data}")
         if "id" not in carousel_data:
             error = carousel_data.get("error", {}).get("message", str(carousel_data))
             raise Exception(f"Carousel container oluşturulamadı: {error}")
