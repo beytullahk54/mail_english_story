@@ -261,15 +261,18 @@ class StoryService:
         sentences = sentences[:5]  # İlk 5 cümle
 
         os.makedirs(IMAGES_DIR, exist_ok=True)
+
+        # Mevcut tüm slide dosyalarını temizle
+        import glob as _glob
+        for old_file in _glob.glob(os.path.join(IMAGES_DIR, f"{story_id}_slide_*.jpg")):
+            os.remove(old_file)
+            print(f"[StoryService] Eski slide silindi: {old_file}")
+
         paths = []
 
         for i, sentence in enumerate(sentences, start=1):
             filename = f"{story_id}_slide_{i}.jpg"
             file_path = os.path.join(IMAGES_DIR, filename)
-
-            # Eski dosya varsa sil — her zaman taze üret
-            if os.path.exists(file_path):
-                os.remove(file_path)
 
             # Her cümle için konuya özel görsel üret
             prompt = (
