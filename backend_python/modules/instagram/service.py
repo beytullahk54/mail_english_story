@@ -93,9 +93,9 @@ class InstagramService:
         """
         Birden fazla görseli carousel post olarak yayınlar. Post ID döner.
         """
-        # 1. Her görsel için ayrı carousel item container oluştur
+        # 1. Her görsel için ayrı carousel item container oluştur ve FINISHED bekle
         item_ids = []
-        for img_url in image_urls:
+        for i, img_url in enumerate(image_urls, start=1):
             container_resp = requests.post(
                 f"{GRAPH_API}/{user_id}/media",
                 params={
@@ -108,9 +108,18 @@ class InstagramService:
             data = container_resp.json()
             if "id" not in data:
                 error = data.get("error", {}).get("message", str(data))
-                raise Exception(f"Carousel item container oluşturulamadı: {error}")
-            item_ids.append(data["id"])
-            print(f"[Instagram] Carousel item container: {data['id']}")
+                print(f"[Instagram] Slide {i} container hatası: {error}")
+                continue
+            print(f"[Instagram] Slide {i} container oluşturuldu: {data['id']}, hazır olması bekleniyor...")
+            try:
+                self._wait_until_ready(data["id"], token)
+                item_ids.append(data["id"])
+                print(f"[Instagram] Slide {i} hazır.")
+            except Exception as e:
+                print(f"[Instagram] Slide {i} hazır olmadı: {e}")
+
+        if len(item_ids) < 2:
+            raise Exception(f"Carousel için en az 2 görsel gerekli, sadece {len(item_ids)} hazırlandı")
 
         # 2. Ana carousel container oluştur
         carousel_resp = requests.post(
