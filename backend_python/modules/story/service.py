@@ -68,8 +68,8 @@ class StoryService:
         img = Image.open(BytesIO(image_bytes)).convert("RGBA")
         w, h = img.size
 
-        # Yazı tipi — sistem fontlarını dene, bulamazsan PIL default'a dön
-        font_size = max(22, w // 28)
+        # Yazı tipi — görsel genişliğine göre orantılı büyük punto
+        font_size = max(36, w // 16)
         font = None
         for font_path in [
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
@@ -87,13 +87,13 @@ class StoryService:
         if font is None:
             font = ImageFont.load_default()
 
-        # Metni satırlara böl (max ~55 karakter)
-        wrapped = textwrap.fill(text, width=55)
+        # Metni satırlara böl — genişliğe göre karakter sayısı hesapla
+        char_width = max(20, int(w / (font_size * 0.6)))
+        wrapped = textwrap.fill(text, width=char_width)
         lines = wrapped.split("\n")
 
-        draw_tmp = ImageDraw.Draw(img)
-        line_height = font_size + 8
-        padding = 20
+        line_height = font_size + 14
+        padding = 28
         banner_h = line_height * len(lines) + padding * 2
 
         # Alt kısımda yarı saydam koyu şerit
