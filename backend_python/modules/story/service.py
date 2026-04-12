@@ -68,12 +68,16 @@ class StoryService:
         img = Image.open(BytesIO(image_bytes)).convert("RGBA")
         w, h = img.size
 
-        # Yazı tipi — görsel genişliğine göre orantılı büyük punto
         font_size = max(52, w // 10)
         font = None
+
+        # 1. Bilinen sistem font yollarını dene
         for font_path in [
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+            "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
+            "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
             "/System/Library/Fonts/Helvetica.ttc",
             "/System/Library/Fonts/Arial.ttf",
             "C:/Windows/Fonts/arialbd.ttf",
@@ -84,8 +88,29 @@ class StoryService:
                     break
                 except Exception:
                     continue
+
+        # 2. glob ile sistemde herhangi bir Bold TTF ara
         if font is None:
-            font = ImageFont.load_default()
+            import glob
+            for pattern in [
+                "/usr/share/fonts/**/*Bold*.ttf",
+                "/usr/share/fonts/**/*bold*.ttf",
+                "/usr/share/fonts/**/*.ttf",
+            ]:
+                matches = glob.glob(pattern, recursive=True)
+                if matches:
+                    try:
+                        font = ImageFont.truetype(matches[0], font_size)
+                        break
+                    except Exception:
+                        continue
+
+        # 3. Pillow >= 10 load_default(size=n) destekler
+        if font is None:
+            try:
+                font = ImageFont.load_default(size=font_size)
+            except TypeError:
+                font = ImageFont.load_default()
 
         # Metni satırlara böl — genişliğe göre karakter sayısı hesapla
         char_width = max(20, int(w / (font_size * 0.6)))
@@ -199,11 +224,9 @@ class StoryService:
             filename = f"{story_id}_slide_{i}.jpg"
             file_path = os.path.join(IMAGES_DIR, filename)
 
-            # Cache: dosya zaten varsa atla
+            # Eski dosya varsa sil — her zaman taze üret
             if os.path.exists(file_path):
-                print(f"[StoryService] Slide {i} cache'den yüklendi.")
-                paths.append(f"static/images/{filename}")
-                continue
+                os.remove(file_path)
 
             # Her cümle için konuya özel görsel üret
             prompt = (
