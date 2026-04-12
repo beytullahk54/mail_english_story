@@ -69,7 +69,7 @@ class StoryService:
         w, h = img.size
 
         # Yazı tipi — görsel genişliğine göre orantılı büyük punto
-        font_size = max(36, w // 16)
+        font_size = max(52, w // 10)
         font = None
         for font_path in [
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
