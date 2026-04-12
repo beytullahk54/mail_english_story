@@ -1,4 +1,5 @@
 import os
+import re
 import textwrap
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
@@ -254,7 +255,9 @@ class StoryService:
         import requests as http_requests
         from urllib.parse import quote
 
-        sentences = [s.strip() for s in content.split(".") if s.strip()]
+        # Nokta/ünlem/soru işaretine göre böl, kısaltmaları (Mr. Dr. vs) atla
+        raw = re.split(r'(?<![A-Z][a-z])(?<!\b[A-Z])(?<!\b\w\.\w)(?<=[.!?])\s+', content.strip())
+        sentences = [s.strip() for s in raw if len(s.strip()) > 20]
         sentences = sentences[:5]  # İlk 5 cümle
 
         os.makedirs(IMAGES_DIR, exist_ok=True)
