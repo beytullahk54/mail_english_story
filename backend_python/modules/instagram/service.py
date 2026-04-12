@@ -8,6 +8,7 @@ Akış:
   3. Story post: container oluştur (media_type=STORIES) → yayınla
 """
 
+import time
 import requests
 from config import config
 
@@ -37,8 +38,30 @@ class InstagramService:
         )
         return caption
 
+    def _wait_until_ready(self, container_id: str, token: str, max_wait: int = 60) -> None:
+        """Container FINISHED durumuna gelene kadar bekle (max_wait saniye)."""
+        interval = 5
+        elapsed = 0
+        while elapsed < max_wait:
+            resp = requests.get(
+                f"{GRAPH_API}/{container_id}",
+                params={"fields": "status_code", "access_token": token},
+                timeout=15,
+            )
+            status = resp.json().get("status_code", "")
+            print(f"[Instagram] Container {container_id} durumu: {status}")
+            if status == "FINISHED":
+                return
+            if status == "ERROR":
+                raise Exception("Instagram container işleme hatası (ERROR)")
+            if status == "EXPIRED":
+                raise Exception("Instagram container süresi doldu (EXPIRED)")
+            time.sleep(interval)
+            elapsed += interval
+        raise Exception(f"Instagram container {max_wait} saniyede hazır olmadı")
+
     def _create_and_publish(self, user_id: str, token: str, params: dict) -> str:
-        """Container oluştur ve yayınla. Post ID döner."""
+        """Container oluştur, hazır olmasını bekle ve yayınla. Post ID döner."""
         container_resp = requests.post(
             f"{GRAPH_API}/{user_id}/media",
             params={**params, "access_token": token},
@@ -49,9 +72,14 @@ class InstagramService:
             error = container_data.get("error", {}).get("message", str(container_data))
             raise Exception(f"Media container oluşturulamadı: {error}")
 
+        container_id = container_data["id"]
+
+        # Instagram görseli işleyene kadar bekle
+        self._wait_until_ready(container_id, token)
+
         publish_resp = requests.post(
             f"{GRAPH_API}/{user_id}/media_publish",
-            params={"creation_id": container_data["id"], "access_token": token},
+            params={"creation_id": container_id, "access_token": token},
             timeout=30,
         )
         publish_data = publish_resp.json()
