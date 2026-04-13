@@ -217,7 +217,7 @@ class StoryService:
         sentences = [s.strip() for s in content_preview.strip().split(".") if s.strip()]
         overlay_text = sentences[0] + "." if sentences else ""
         try:
-            image_bytes = self._add_text_overlay(image_bytes, overlay_text)
+            image_bytes = self._add_text_overlay(image_bytes, overlay_text, slide_label=f"#{story_id}")
         except Exception as e:
             print(f"[StoryService] Metin overlay hatası: {e}")
 
