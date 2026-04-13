@@ -113,11 +113,15 @@ class InstagramService:
         )
         permalink = permalink_resp.json().get("permalink", "")
 
-        # Story olarak da paylaş
+        # Story için 9:16 dikey görsel üret ve paylaş
         ig_story_id = None
         try:
+            from modules.story.service import StoryService
+            story_service = StoryService()
+            vertical_path = story_service.get_or_generate_story_image_vertical(story_id, topic, content)
+            vertical_url = f"{base}/{vertical_path}"
             ig_story_id = self._create_and_publish(user_id, token, {
-                "image_url": image_url,
+                "image_url": vertical_url,
                 "media_type": "STORIES",
             })
             print(f"[Instagram] Story paylaşıldı: {ig_story_id}")

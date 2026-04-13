@@ -316,6 +316,53 @@ class StoryService:
 
         return paths
 
+    def get_or_generate_story_image_vertical(self, story_id: int, topic: str, content: str) -> str:
+        """
+        Instagram Story için 9:16 dikey görsel üretir (800x1422).
+        Döner: public path string (static/images/{id}_story.jpg)
+        """
+        import requests as http_requests
+        from urllib.parse import quote
+
+        filename = f"{story_id}_story.jpg"
+        file_path = os.path.join(IMAGES_DIR, filename)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        paragraphs = [p.strip() for p in content.strip().split("\n\n") if p.strip()]
+        story_context = " ".join(paragraphs[:2])[:400]
+        prompt = (
+            f"watercolor illustration: {story_context}. "
+            f"Topic: {topic}. "
+            f"Storytelling atmosphere, warm vivid colors, no text, no words, no letters"
+        )
+        url = (
+            f"https://image.pollinations.ai/prompt/{quote(prompt)}"
+            f"?width=800&height=1422&nologo=true&seed={story_id + 999}"
+        )
+        response = http_requests.get(url, timeout=60)
+        if response.status_code != 200:
+            raise Exception(f"Görsel servisi hata döndürdü: {response.status_code}")
+        image_bytes = response.content
+
+        sentences = [s.strip() for s in content.split(".") if s.strip()]
+        overlay_text = sentences[0] + "." if sentences else ""
+        try:
+            image_bytes = self._add_text_overlay(image_bytes, overlay_text, slide_label=f"#{story_id}")
+        except Exception as e:
+            print(f"[StoryService] Story görsel overlay hatası: {e}")
+
+        os.makedirs(IMAGES_DIR, exist_ok=True)
+        img_obj = Image.open(BytesIO(image_bytes)).convert("RGB")
+        jpeg_buf = BytesIO()
+        img_obj.save(jpeg_buf, format="JPEG", quality=92)
+        with open(file_path, "wb") as f:
+            f.write(jpeg_buf.getvalue())
+
+        print(f"[StoryService] Dikey Story görseli kaydedildi: {filename}")
+        return f"static/images/{filename}"
+
     def get_random_today_story(self, db: Session) -> StoryItem | None:
         """Bugüne ait a1/a2/b1/b2 seviyeli hikayelerden rastgele birini döner."""
         import random
