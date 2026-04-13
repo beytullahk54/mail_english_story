@@ -322,12 +322,10 @@ class StoryService:
         from sqlalchemy import func, cast, Date
 
         today = date.today()
-        levels = ["a1", "a2", "b1", "b2"]
-
         stories = (
             db.query(Story)
             .filter(cast(Story.created_at, Date) == today)
-            .filter(Story.level.in_(levels))
+            .filter(func.lower(Story.level).in_(["a1", "a2", "b1", "b2"]))
             .all()
         )
 
