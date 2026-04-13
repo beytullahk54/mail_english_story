@@ -83,9 +83,8 @@ def post_daily_to_instagram(db: Session = Depends(get_db)):
 @router.post("/{story_id}/instagram", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_token)])
 def post_to_instagram(story_id: int, db: Session = Depends(get_db)):
     """
-    Hikayenin görselini Instagram'a paylaşır.
-    Görsel yoksa önce üretir.
-    Koruma: X-Api-Token header gerektirir.
+    Belirtilen hikayeyi Instagram'a paylaşır (feed + story).
+    Görsel yoksa üretir. X-Api-Token header gerektirir.
     """
     from modules.instagram.service import InstagramService
 
@@ -94,30 +93,22 @@ def post_to_instagram(story_id: int, db: Session = Depends(get_db)):
     if not story:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hikaye bulunamadı")
 
-    # Görsel yoksa üret ve kaydet
     try:
-        service.get_or_generate_story_image(db, story_id, story.topic, story.content)
+        service.get_or_generate_story_image(db, story.id, story.topic, story.content)
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Görsel üretilemedi: {str(e)}",
-        )
+        raise HTTPException(status_code=500, detail=f"Görsel üretilemedi: {str(e)}")
 
-    # Instagram'a gönder
     try:
         instagram = InstagramService()
         result = instagram.post(
-            story_id=story_id,
+            story_id=story.id,
             topic=story.topic,
             level=story.level,
             content=story.content,
         )
         return result
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Instagram paylaşımı başarısız: {str(e)}",
-        )
+        raise HTTPException(status_code=500, detail=f"Instagram paylaşımı başarısız: {str(e)}")
 
 
 @router.post("/generate", response_model=StoryResponse, status_code=status.HTTP_200_OK)
