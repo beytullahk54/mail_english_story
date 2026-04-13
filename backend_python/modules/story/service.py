@@ -69,7 +69,7 @@ class StoryService:
         img = Image.open(BytesIO(image_bytes)).convert("RGBA")
         w, h = img.size
 
-        font_size = max(40, w // 16)
+        font_size = max(26, w // 22)
         font = None
 
         # 1. Bilinen sistem font yollarını dene
@@ -118,9 +118,10 @@ class StoryService:
         wrapped = textwrap.fill(text, width=char_width)
         lines = wrapped.split("\n")
 
-        line_height = font_size + 14
-        padding = 28
-        banner_h = line_height * len(lines) + padding * 2
+        line_height = font_size + 10
+        padding = 20
+        max_banner_h = h // 3
+        banner_h = min(line_height * len(lines) + padding * 2, max_banner_h)
 
         # Alt kısımda yarı saydam koyu şerit
         overlay = Image.new("RGBA", (w, banner_h), (0, 0, 0, 0))
@@ -214,7 +215,7 @@ class StoryService:
 
         # 3. İlk 2 cümleyi al ve görsele yaz
         sentences = [s.strip() for s in content_preview.strip().split(".") if s.strip()]
-        overlay_text = ". ".join(sentences[:2]) + "."
+        overlay_text = sentences[0] + "." if sentences else ""
         try:
             image_bytes = self._add_text_overlay(image_bytes, overlay_text)
         except Exception as e:
