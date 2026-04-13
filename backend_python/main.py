@@ -11,6 +11,7 @@ from database import Base, engine
 from modules.subscriber.router import router as subscriber_router
 from modules.story.router import router as story_router
 from modules.mailer.router import router as mailer_router
+from modules.mailer.models import MailLog  # noqa: F401 — tablonun create_all'a dahil olması için
 
 # Görsel klasörünü oluştur
 IMAGES_DIR = os.path.join(os.path.dirname(__file__), "static", "images")

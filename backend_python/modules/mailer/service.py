@@ -6,7 +6,7 @@ from datetime import datetime
 
 from config import config
 from modules.subscriber.models import Subscriber
-from .models import SendStoryRequest, SendStoryResponse
+from .models import SendStoryRequest, SendStoryResponse, MailLog
 from .template import build_email_html
 from modules.story.service import StoryService
 from modules.story.models import StoryRequest, Story
@@ -157,6 +157,26 @@ class MailerService:
                 except Exception as e:
                     print(f"[Mailer] {email} gönderilemedi: {e}")
                     total_failed += 1
+
+        print(f"\n{'='*40}")
+        print(f"[Mailer] ÖZET: {total_sent} başarılı, {total_failed} başarısız")
+        print(f"[Mailer] Alıcılar: {', '.join(all_recipients) if all_recipients else '-'}")
+        print(f"{'='*40}\n")
+
+        # Veritabanına log kaydet
+        try:
+            log = MailLog(
+                topic=current_topic,
+                total_sent=total_sent,
+                total_failed=total_failed,
+                recipients=", ".join(all_recipients) if all_recipients else None,
+            )
+            self.db.add(log)
+            self.db.commit()
+            print(f"[Mailer] Log kaydedildi (id={log.id})")
+        except Exception as e:
+            self.db.rollback()
+            print(f"[Mailer] Log kaydedilemedi: {e}")
 
         # Tüm mailler gittikten sonra bugünün hikayelerinden rastgele birini Instagram'a paylaş
         try:
