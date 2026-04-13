@@ -366,16 +366,21 @@ class StoryService:
     def get_random_today_story(self, db: Session) -> StoryItem | None:
         """Bugüne ait a1/a2/b1/b2 seviyeli hikayelerden rastgele birini döner."""
         import random
-        from datetime import date
-        from sqlalchemy import func, cast, Date
+        from datetime import datetime, timezone, timedelta
+        from sqlalchemy import func
 
-        today = date.today()
+        # UTC'de son 24 saati kapsayacak şekilde filtrele (timezone farkı sorununu önler)
+        now_utc = datetime.now(timezone.utc)
+        day_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+
         stories = (
             db.query(Story)
-            .filter(cast(Story.created_at, Date) == today)
+            .filter(Story.created_at >= day_start)
             .filter(func.lower(Story.level).in_(["a1", "a2", "b1", "b2"]))
             .all()
         )
+
+        print(f"[StoryService] Bugüne ait hikaye sayısı: {len(stories)} (UTC gün başı: {day_start})")
 
         if not stories:
             return None

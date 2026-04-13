@@ -198,6 +198,8 @@ class MailerService:
             else:
                 print("[Mailer] Instagram için bugüne ait hikaye bulunamadı.")
         except Exception as e:
+            import traceback
             print(f"[Mailer] Instagram paylaşım hatası: {e}")
+            print(traceback.format_exc())
 
         return SendStoryResponse(sent=total_sent, failed=total_failed, recipients=all_recipients)
