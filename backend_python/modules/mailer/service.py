@@ -158,23 +158,26 @@ class MailerService:
                     print(f"[Mailer] {email} gönderilemedi: {e}")
                     total_failed += 1
 
-            # Mailler gittikten sonra Instagram'a paylaş (sadece DB'ye kaydedildiyse)
-            if db_story and db_story.id:
-                try:
-                    from modules.instagram.service import InstagramService
-                    print(f"[Mailer] {level.upper()} için Instagram paylaşımı başlatılıyor...")
-                    self.story_service.get_or_generate_story_image(
-                        self.db, db_story.id, current_topic, level_story
-                    )
-                    instagram = InstagramService()
-                    result = instagram.post(
-                        story_id=db_story.id,
-                        topic=current_topic,
-                        level=level,
-                        content=level_story,
-                    )
-                    print(f"[Mailer] Instagram paylaşıldı: {result.get('permalink', '')}")
-                except Exception as e:
-                    print(f"[Mailer] Instagram paylaşım hatası ({level}): {e}")
+        # Tüm mailler gittikten sonra bugünün hikayelerinden rastgele birini Instagram'a paylaş
+        try:
+            from modules.instagram.service import InstagramService
+            print("[Mailer] Tüm mailler gönderildi, Instagram paylaşımı başlatılıyor...")
+            story = self.story_service.get_random_today_story(self.db)
+            if story:
+                self.story_service.get_or_generate_story_image(
+                    self.db, story.id, story.topic, story.content
+                )
+                instagram = InstagramService()
+                result = instagram.post(
+                    story_id=story.id,
+                    topic=story.topic,
+                    level=story.level,
+                    content=story.content,
+                )
+                print(f"[Mailer] Instagram paylaşıldı: {result.get('permalink', '')}")
+            else:
+                print("[Mailer] Instagram için bugüne ait hikaye bulunamadı.")
+        except Exception as e:
+            print(f"[Mailer] Instagram paylaşım hatası: {e}")
 
         return SendStoryResponse(sent=total_sent, failed=total_failed, recipients=all_recipients)
