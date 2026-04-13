@@ -315,6 +315,28 @@ class StoryService:
 
         return paths
 
+    def get_random_today_story(self, db: Session) -> StoryItem | None:
+        """Bugüne ait a1/a2/b1/b2 seviyeli hikayelerden rastgele birini döner."""
+        import random
+        from datetime import date
+        from sqlalchemy import func, cast, Date
+
+        today = date.today()
+        levels = ["a1", "a2", "b1", "b2"]
+
+        stories = (
+            db.query(Story)
+            .filter(cast(Story.created_at, Date) == today)
+            .filter(Story.level.in_(levels))
+            .all()
+        )
+
+        if not stories:
+            return None
+
+        story = random.choice(stories)
+        return StoryItem.model_validate(story)
+
     def get_story_by_id(self, db: Session, story_id: int) -> StoryItem | None:
         story = db.query(Story).filter(Story.id == story_id).first()
         if not story:

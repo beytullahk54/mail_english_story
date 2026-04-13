@@ -46,6 +46,40 @@ def get_story(story_id: int, db: Session = Depends(get_db)):
     return story
 
 
+@router.post("/instagram/daily", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_token)])
+def post_daily_to_instagram(db: Session = Depends(get_db)):
+    """
+    Bugüne ait hikayelerden (a1/a2/b1/b2) rastgele birini seçip
+    görselini üretir ve Instagram'a paylaşır.
+    """
+    from modules.instagram.service import InstagramService
+
+    service = StoryService()
+    story = service.get_random_today_story(db)
+    if not story:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bugüne ait hikaye bulunamadı",
+        )
+
+    try:
+        service.get_or_generate_story_image(db, story.id, story.topic, story.content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Görsel üretilemedi: {str(e)}")
+
+    try:
+        instagram = InstagramService()
+        result = instagram.post(
+            story_id=story.id,
+            topic=story.topic,
+            level=story.level,
+            content=story.content,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Instagram paylaşımı başarısız: {str(e)}")
+
+
 @router.post("/{story_id}/instagram", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_token)])
 def post_to_instagram(story_id: int, db: Session = Depends(get_db)):
     """
