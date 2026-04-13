@@ -69,7 +69,7 @@ class StoryService:
         img = Image.open(BytesIO(image_bytes)).convert("RGBA")
         w, h = img.size
 
-        font_size = max(52, w // 11)
+        font_size = max(40, w // 16)
         font = None
 
         # 1. Bilinen sistem font yollarını dene
