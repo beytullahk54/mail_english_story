@@ -3,7 +3,8 @@ import re
 import textwrap
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from sqlalchemy.orm import Session
 from config import config
 from .models import Story, StoryRequest, StoryResponse, StoryItem, StoriesListResponse
@@ -23,8 +24,7 @@ LEVEL_DESCRIPTIONS = {
 
 class StoryService:
     def __init__(self):
-        genai.configure(api_key=config.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel("gemini-2.5-flash")
+        self.client = genai.Client(api_key=config.GEMINI_API_KEY)
 
     def generate_story(self, request: StoryRequest, db: Session | None = None) -> StoryResponse:
         level_desc = LEVEL_DESCRIPTIONS.get(request.level.lower(), "simple sentences, basic vocabulary")
@@ -36,7 +36,10 @@ class StoryService:
             f"Only return the story text, no titles or extra explanations."
         )
 
-        response = self.model.generate_content(prompt)
+        response = self.client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
         story_text = response.text.strip()
 
         # DB'ye kaydet
