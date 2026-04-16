@@ -391,6 +391,15 @@ class StoryService:
         story = random.choice(stories)
         return StoryItem.model_validate(story)
 
+    def increment_view_count(self, db: Session, story_id: int) -> int | None:
+        story = db.query(Story).filter(Story.id == story_id).first()
+        if not story:
+            return None
+        story.view_count = (story.view_count or 0) + 1
+        db.commit()
+        db.refresh(story)
+        return story.view_count
+
     def get_story_by_id(self, db: Session, story_id: int) -> StoryItem | None:
         story = db.query(Story).filter(Story.id == story_id).first()
         if not story:

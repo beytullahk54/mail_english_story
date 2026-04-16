@@ -67,6 +67,10 @@
                 <i class="pi pi-calendar"></i>
                 {{ formatDate(story.created_at) }}
               </span>
+              <span class="view-count">
+                <i class="pi pi-eye"></i>
+                {{ story.view_count }}
+              </span>
             </div>
             <div class="story-topic">
               <i class="pi pi-tag"></i>
@@ -321,6 +325,14 @@ onMounted(fetchStories);
   align-items: center;
   gap: 0.35rem;
   font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.view-count {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
 }
 

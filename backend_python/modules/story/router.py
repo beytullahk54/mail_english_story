@@ -21,6 +21,15 @@ def list_stories(
     return service.get_stories(db, page=page, page_size=page_size, level=level, language=language)
 
 
+@router.post("/{story_id}/view", status_code=status.HTTP_200_OK)
+def increment_view(story_id: int, db: Session = Depends(get_db)):
+    service = StoryService()
+    view_count = service.increment_view_count(db, story_id)
+    if view_count is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hikaye bulunamadı")
+    return {"view_count": view_count}
+
+
 @router.get("/{story_id}/image")
 def get_story_image(story_id: int, db: Session = Depends(get_db)):
     service = StoryService()

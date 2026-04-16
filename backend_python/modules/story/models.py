@@ -15,6 +15,7 @@ class Story(Base):
     language: Mapped[str] = mapped_column(String(20), nullable=False, default="English")
     content: Mapped[str] = mapped_column(Text, nullable=False)
     image_path: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    view_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -42,6 +43,7 @@ class StoryItem(BaseModel):
     language: str
     content: str
     image_path: str | None = None
+    view_count: int = 0
     created_at: datetime
 
     class Config:

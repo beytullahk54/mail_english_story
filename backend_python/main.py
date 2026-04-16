@@ -31,6 +31,10 @@ def run_migrations():
             "ALTER TABLE stories "
             "ADD COLUMN IF NOT EXISTS image_path VARCHAR(255);"
         ))
+        conn.execute(text(
+            "ALTER TABLE stories "
+            "ADD COLUMN IF NOT EXISTS view_count INTEGER NOT NULL DEFAULT 0;"
+        ))
         conn.commit()
         print("[Migration] Kolonlar kontrol edildi / eklendi.")
 

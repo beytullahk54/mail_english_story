@@ -39,6 +39,10 @@
             <i class="pi pi-calendar"></i>
             {{ formatDate(story.created_at) }}
           </span>
+          <span class="view-count">
+            <i class="pi pi-eye"></i>
+            {{ viewCount }}
+          </span>
           <button class="copy-btn" @click="copyStory">
             <i :class="copied ? 'pi pi-check' : 'pi pi-copy'" />
             {{ copied ? 'Copied!' : 'Copy' }}
@@ -90,6 +94,7 @@ const loading = ref(true);
 const copied = ref(false);
 const imageUrl = ref(null);
 const imageLoading = ref(false);
+const viewCount = ref(0);
 
 const fetchStory = async () => {
   loading.value = true;
@@ -140,7 +145,15 @@ useHead(computed(() => ({
 
 onMounted(async () => {
   await fetchStory();
-  if (story.value) generateImage();
+  if (story.value) {
+    generateImage();
+    try {
+      const data = await $fetch(`${config.public.apiBase}/api/v1/story/${route.params.id}/view`, { method: 'POST' });
+      viewCount.value = data.view_count;
+    } catch {
+      viewCount.value = story.value.view_count ?? 0;
+    }
+  }
 });
 </script>
 
@@ -252,6 +265,14 @@ onMounted(async () => {
 .level-badge.level-advanced { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #ef4444; }
 
 .date-text {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.view-count {
   display: flex;
   align-items: center;
   gap: 0.35rem;
