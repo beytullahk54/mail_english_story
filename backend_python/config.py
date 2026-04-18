@@ -32,8 +32,8 @@ class Config:
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "kahramanbey54@gmail.com")
     INSTAGRAM_TOKEN: str = os.getenv("INSTAGRAM_TOKEN", "")
     INSTAGRAM_USER_ID: str = os.getenv("INSTAGRAM_USER_ID", "")
-    # Backend'in public URL'i (static görseller için). Boşsa APP_BASE_URL kullanılır.
     BACKEND_URL: str = os.getenv("BACKEND_URL", "")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "admin123")
 
 
 config = Config()

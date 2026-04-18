@@ -234,22 +234,67 @@ class BlogService:
         ).first()
         return self._to_detail(post) if post else None
 
+    def get_all_posts(self, db: Session, page: int = 1, page_size: int = 50) -> BlogListResponse:
+        query = db.query(BlogPost)
+        total = query.count()
+        posts = query.order_by(BlogPost.published_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+        return BlogListResponse(items=[self._to_item(p) for p in posts], total=total, page=page, page_size=page_size)
+
+    def get_post_by_id(self, db: Session, post_id: int) -> BlogPostDetail | None:
+        post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
+        return self._to_detail(post) if post else None
+
     def create_post(self, db: Session, data: BlogPostCreate) -> BlogPost:
         post = BlogPost(
             title=data.title,
+            title_tr=data.title_tr,
             slug=data.slug,
+            slug_tr=data.slug_tr,
             excerpt=data.excerpt,
+            excerpt_tr=data.excerpt_tr,
             content=data.content,
+            content_tr=data.content_tr,
             author=data.author,
             cover_image=data.cover_image,
             tags=json.dumps(data.tags) if data.tags else None,
             meta_description=data.meta_description,
+            meta_description_tr=data.meta_description_tr,
             published=data.published,
         )
         db.add(post)
         db.commit()
         db.refresh(post)
-        return post
+        return self._to_detail(post)
+
+    def update_post(self, db: Session, post_id: int, data: BlogPostCreate) -> BlogPostDetail | None:
+        post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
+        if not post:
+            return None
+        post.title = data.title
+        post.title_tr = data.title_tr
+        post.slug = data.slug
+        post.slug_tr = data.slug_tr
+        post.excerpt = data.excerpt
+        post.excerpt_tr = data.excerpt_tr
+        post.content = data.content
+        post.content_tr = data.content_tr
+        post.author = data.author
+        post.cover_image = data.cover_image
+        post.tags = json.dumps(data.tags) if data.tags else None
+        post.meta_description = data.meta_description
+        post.meta_description_tr = data.meta_description_tr
+        post.published = data.published
+        db.commit()
+        db.refresh(post)
+        return self._to_detail(post)
+
+    def delete_post(self, db: Session, post_id: int) -> bool:
+        post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
+        if not post:
+            return False
+        db.delete(post)
+        db.commit()
+        return True
 
     def seed_posts(self, db: Session) -> int:
         existing = db.query(BlogPost).count()
