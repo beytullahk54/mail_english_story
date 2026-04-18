@@ -202,4 +202,20 @@ class MailerService:
             print(f"[Mailer] Instagram paylaşım hatası: {e}")
             print(traceback.format_exc())
 
+        # Mailler gittikten sonra topics.md'deki sıradaki konuyu blog yazısı olarak yayınla
+        try:
+            from modules.blog.generator import BlogGenerator, read_next_topic
+            topic = read_next_topic()
+            if topic:
+                print(f"[Mailer] Blog yazısı üretiliyor: {topic[1]}")
+                post = BlogGenerator().generate_and_save(self.db)
+                if post:
+                    print(f"[Mailer] Blog yazısı yayınlandı: [{post.id}] {post.title}")
+                else:
+                    print("[Mailer] Blog yazısı oluşturulamadı.")
+            else:
+                print("[Mailer] Bekleyen blog konusu yok (topics.md).")
+        except Exception as e:
+            print(f"[Mailer] Blog üretim hatası (mail gönderimi etkilenmedi): {e}")
+
         return SendStoryResponse(sent=total_sent, failed=total_failed, recipients=all_recipients)

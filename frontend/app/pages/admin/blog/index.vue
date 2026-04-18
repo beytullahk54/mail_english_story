@@ -27,10 +27,23 @@
       <main class="admin-content">
         <div class="content-header">
           <h2>Yazılar <span class="count">{{ total }}</span></h2>
-          <NuxtLink to="/admin/blog/create" class="create-btn">
-            <i class="pi pi-plus"></i>
-            Yeni Yazı
-          </NuxtLink>
+          <div class="header-actions">
+            <button class="generate-btn" :disabled="generating" @click="generateNext" :title="'topics.md\'deki sıradaki konuyu üret'">
+              <i v-if="generating" class="pi pi-spinner pi-spin"></i>
+              <i v-else class="pi pi-sparkles"></i>
+              {{ generating ? 'Üretiliyor...' : 'AI Üret' }}
+            </button>
+            <NuxtLink to="/admin/blog/create" class="create-btn">
+              <i class="pi pi-plus"></i>
+              Yeni Yazı
+            </NuxtLink>
+          </div>
+        </div>
+
+        <!-- Generate result message -->
+        <div v-if="generateMsg" class="generate-msg" :class="generateMsg.type">
+          <i :class="generateMsg.type === 'success' ? 'pi pi-check-circle' : 'pi pi-exclamation-circle'"></i>
+          {{ generateMsg.text }}
         </div>
 
         <!-- Loading -->
@@ -144,6 +157,27 @@ const doDelete = async () => {
   }
 };
 
+const generating = ref(false);
+const generateMsg = ref(null);
+
+const generateNext = async () => {
+  generating.value = true;
+  generateMsg.value = null;
+  try {
+    const res = await $fetch(`${config.public.apiBase}/api/v1/blog/generate-next`, {
+      method: 'POST',
+      headers: authHeaders.value,
+    });
+    generateMsg.value = { type: 'success', text: res.message + (res.title ? ` → "${res.title}"` : '') };
+    await fetchPosts();
+  } catch (e) {
+    generateMsg.value = { type: 'error', text: e?.data?.detail || 'Üretim başarısız.' };
+  } finally {
+    generating.value = false;
+    setTimeout(() => { generateMsg.value = null; }, 6000);
+  }
+};
+
 const handleLogout = () => { logout(); navigateTo('/admin/login'); };
 
 useHead({
@@ -194,6 +228,25 @@ onMounted(fetchPosts);
 }
 .content-header h2 { margin: 0; font-size: 1.3rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
 .count { font-size: 0.85rem; background: rgba(129,140,248,0.15); border: 1px solid rgba(129,140,248,0.25); color: #818cf8; padding: 0.1rem 0.6rem; border-radius: 50px; }
+
+.header-actions { display: flex; align-items: center; gap: 0.6rem; }
+
+.generate-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.6rem 1.1rem; border-radius: 10px;
+  background: rgba(192,132,252,0.15); border: 1px solid rgba(192,132,252,0.35);
+  color: #c084fc; font-weight: 600; font-size: 0.88rem; font-family: inherit;
+  cursor: pointer; transition: all 0.2s;
+}
+.generate-btn:hover:not(:disabled) { background: rgba(192,132,252,0.25); }
+.generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.generate-msg {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.75rem 1.25rem; border-radius: 10px; font-size: 0.88rem;
+}
+.generate-msg.success { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: #34d399; }
+.generate-msg.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #ef4444; }
 
 .create-btn {
   display: inline-flex; align-items: center; gap: 0.4rem;

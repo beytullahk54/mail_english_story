@@ -59,6 +59,27 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
     return {"message": "Deleted"}
 
 
+@router.post("/generate-next", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_token)])
+def generate_next_post(db: Session = Depends(get_db)):
+    """topics.md'deki bir sonraki konuyu Gemini ile üretir ve yayınlar."""
+    from .generator import BlogGenerator, read_next_topic
+    topic = read_next_topic()
+    if not topic:
+        return {"message": "Bekleyen konu yok. topics.md dosyasına yeni konu ekleyin."}
+    try:
+        post = BlogGenerator().generate_and_save(db)
+        if not post:
+            return {"message": "Oluşturulamadı."}
+        return {
+            "message": "Yazı oluşturuldu.",
+            "id": post.id,
+            "title": post.title,
+            "slug": post.slug,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Üretim hatası: {str(e)}")
+
+
 @router.post("/seed", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_token)])
 def seed_posts(db: Session = Depends(get_db)):
     count = BlogService().seed_posts(db)
