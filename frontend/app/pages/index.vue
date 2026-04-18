@@ -85,6 +85,10 @@
             <i class="pi pi-book"></i>
             {{ t('storiesLink') }}
           </NuxtLink>
+          <NuxtLink to="/en/blog" class="story-cta">
+            <i class="pi pi-pencil"></i>
+            Blog
+          </NuxtLink>
         </div>
       </div>
     </main>
@@ -572,6 +576,10 @@ const subscribe = async () => {
 .story-link {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .story-cta {

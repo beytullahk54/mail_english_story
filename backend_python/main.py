@@ -12,6 +12,8 @@ from modules.subscriber.router import router as subscriber_router
 from modules.story.router import router as story_router
 from modules.mailer.router import router as mailer_router
 from modules.mailer.models import MailLog  # noqa: F401 — tablonun create_all'a dahil olması için
+from modules.blog.router import router as blog_router
+from modules.blog.models import BlogPost  # noqa: F401 — create_all'a dahil olması için
 
 # Görsel klasörünü oluştur
 IMAGES_DIR = os.path.join(os.path.dirname(__file__), "static", "images")
@@ -54,6 +56,7 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__
 app.include_router(subscriber_router, prefix="/api/v1")
 app.include_router(story_router, prefix="/api/v1")
 app.include_router(mailer_router, prefix="/api/v1")
+app.include_router(blog_router, prefix="/api/v1")
 
 
 @app.get("/health")

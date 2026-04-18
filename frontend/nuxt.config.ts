@@ -18,7 +18,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: '' // Default value, will be overridden by NUXT_PUBLIC_API_BASE
+      apiBase: '',   // NUXT_PUBLIC_API_BASE
+      siteUrl: '',   // NUXT_PUBLIC_SITE_URL  (frontend URL, SEO canonical için)
     }
   }
 });
