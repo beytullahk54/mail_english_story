@@ -64,7 +64,10 @@ const handleLogin = async () => {
   }
 };
 
-useHead({ title: 'Admin Giriş — English Story' });
+useHead({
+  title: 'Admin Giriş — English Story',
+  meta: [{ name: 'robots', content: 'noindex, nofollow, noarchive' }],
+});
 </script>
 
 <style scoped>

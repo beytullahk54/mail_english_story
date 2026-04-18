@@ -80,7 +80,10 @@ const handleSubmit = async (form) => {
   }
 };
 
-useHead({ title: 'Düzenle — Admin' });
+useHead({
+  title: 'Düzenle — Admin',
+  meta: [{ name: 'robots', content: 'noindex, nofollow, noarchive' }],
+});
 </script>
 
 <style scoped>

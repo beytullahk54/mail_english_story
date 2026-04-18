@@ -146,7 +146,10 @@ const doDelete = async () => {
 
 const handleLogout = () => { logout(); navigateTo('/admin/login'); };
 
-useHead({ title: 'Blog Yönetimi — Admin' });
+useHead({
+  title: 'Blog Yönetimi — Admin',
+  meta: [{ name: 'robots', content: 'noindex, nofollow, noarchive' }],
+});
 onMounted(fetchPosts);
 </script>
 

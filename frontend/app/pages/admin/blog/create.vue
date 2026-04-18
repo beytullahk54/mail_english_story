@@ -46,7 +46,10 @@ const handleSubmit = async (form) => {
   }
 };
 
-useHead({ title: 'Yeni Yazı — Admin' });
+useHead({
+  title: 'Yeni Yazı — Admin',
+  meta: [{ name: 'robots', content: 'noindex, nofollow, noarchive' }],
+});
 </script>
 
 <style scoped>

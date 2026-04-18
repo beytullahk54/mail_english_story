@@ -16,6 +16,19 @@ export default defineNuxtConfig({
       },
     },
   },
+  routeRules: {
+    '/admin/**': {
+      headers: {
+        'X-Robots-Tag': 'noindex, nofollow, noarchive',
+      },
+    },
+    '/admin': {
+      headers: {
+        'X-Robots-Tag': 'noindex, nofollow, noarchive',
+      },
+    },
+  },
+
   runtimeConfig: {
     public: {
       apiBase: '',   // NUXT_PUBLIC_API_BASE
