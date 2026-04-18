@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from config import config
 from .models import BlogPost
 
-TOPICS_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "..", "topics.md")
+TOPICS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "topics.md"))
 
 PROMPT = """You are a professional bilingual content writer specializing in English language learning.
 
