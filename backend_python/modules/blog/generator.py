@@ -9,7 +9,7 @@ from config import config
 from .models import BlogPost
 
 # Path(__file__).resolve() her zaman mutlak path verir, çalışma dizininden bağımsız
-TOPICS_FILE = str(Path(__file__).resolve().parent.parent.parent.parent / "topics.md")
+TOPICS_FILE = str(Path(__file__).resolve().parent.parent.parent / "topics.md")
 
 PROMPT = """You are a professional bilingual content writer specializing in English language learning.
 
