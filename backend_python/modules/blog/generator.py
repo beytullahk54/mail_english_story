@@ -2,12 +2,14 @@ import json
 import re
 import os
 from datetime import date
+from pathlib import Path
 from google import genai
 from sqlalchemy.orm import Session
 from config import config
 from .models import BlogPost
 
-TOPICS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "topics.md"))
+# Path(__file__).resolve() her zaman mutlak path verir, çalışma dizininden bağımsız
+TOPICS_FILE = str(Path(__file__).resolve().parent.parent.parent.parent / "topics.md")
 
 PROMPT = """You are a professional bilingual content writer specializing in English language learning.
 
@@ -55,15 +57,23 @@ def _to_slug(text: str) -> str:
 
 def read_next_topic() -> tuple[str, str] | None:
     """Read the first unchecked topic from topics.md. Returns (topic_tr, topic_en) or None."""
+    print(f"[BlogGen] topics.md yolu: {TOPICS_FILE}")
     if not os.path.exists(TOPICS_FILE):
+        print(f"[BlogGen] HATA: topics.md bulunamadı: {TOPICS_FILE}")
         return None
     with open(TOPICS_FILE, "r", encoding="utf-8") as f:
         content = f.read()
 
     for line in content.splitlines():
-        match = re.match(r"^- \[ \] (.+?) \| (.+)$", line.strip())
+        stripped = line.strip()
+        # Sadece "- [ ]" ile başlayan satırları al, "- [x]" olanları atla
+        match = re.match(r"^- \[ \] (.+?) \| (.+?)(?:\s+\(\d{4}-\d{2}-\d{2}\))?$", stripped)
         if match:
-            return match.group(1).strip(), match.group(2).strip()
+            topic_tr = match.group(1).strip()
+            topic_en = match.group(2).strip()
+            print(f"[BlogGen] Konu bulundu: {topic_tr} | {topic_en}")
+            return topic_tr, topic_en
+    print("[BlogGen] Bekleyen konu bulunamadı.")
     return None
 
 
