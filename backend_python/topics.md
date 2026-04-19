@@ -1,16 +1,20 @@
 # Blog Konuları
 
 Format: `- [ ] TR Konu | EN Topic`
-Script her gün ilk işaretsiz konuyu alır, içerik üretir, işaretler.
+Script ilk işlenmemiş konuyu alır ve içerik üretir.
+
+> **NOT:** Bu dosya artık script tarafından değiştirilmez.
+> Tamamlanan konular `backend_python/.topics_done` dosyasına yazılır (gitignored, sunucu-yerel).
+> Yeni konu eklemek için sadece bu dosyaya `- [ ]` satırı ekle ve git'e push et.
 
 ## Bekleyenler
 
-- [ ] Netflix ile İngilizce Öğrenmek | Learning English with Netflix (2026-04-18)
-- [ ] Shadowing Tekniği Nedir | What is the Shadowing Technique
-- [ ] İngilizce Günlük Tutmak | Keeping a Journal in English
-- [ ] Podcast ile İngilizce Öğrenmek | Learning English with Podcasts
-- [ ] İngilizce Konuşma Korkusunu Yenmek | How to Overcome Fear of Speaking English
-- [ ] Kelime Kartları Gerçekten İşe Yarıyor mu | Do Flashcards Really Work for Vocabulary
+- [x] Netflix ile İngilizce Öğrenmek | Learning English with Netflix (2026-04-18)
+- [x] Shadowing Tekniği Nedir | What is the Shadowing Technique
+- [x] İngilizce Günlük Tutmak | Keeping a Journal in English
+- [x] Podcast ile İngilizce Öğrenmek | Learning English with Podcasts
+- [x] İngilizce Konuşma Korkusunu Yenmek | How to Overcome Fear of Speaking English
+- [x] Kelime Kartları Gerçekten İşe Yarıyor mu | Do Flashcards Really Work for Vocabulary
 - [ ] A2'den B1'e Geçiş Nasıl Olur | How to Move from A2 to B1 English
 - [ ] İngilizce Öğrenmede Yaş Fark Eder mi | Does Age Matter in Learning English
 - [ ] En Çok Kullanılan 100 İngilizce Kelime | The 100 Most Common English Words

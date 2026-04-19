@@ -1,3 +1,6 @@
 node_modules
 .env
 .nuxt
+
+# Sunucu-yerel durum dosyaları — git pull'dan etkilenmemeli
+backend_python/.topics_done

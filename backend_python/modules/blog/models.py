@@ -23,6 +23,7 @@ class BlogPost(Base):
     tags: Mapped[str | None] = mapped_column(Text, nullable=True)
     meta_description: Mapped[str | None] = mapped_column(String(300), nullable=True)
     meta_description_tr: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    topic_key: Mapped[str | None] = mapped_column(String(500), nullable=True, index=True)
     published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

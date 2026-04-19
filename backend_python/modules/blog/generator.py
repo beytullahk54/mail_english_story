@@ -10,6 +10,7 @@ from .models import BlogPost
 
 # Path(__file__).resolve() her zaman mutlak path verir, çalışma dizininden bağımsız
 TOPICS_FILE = str(Path(__file__).resolve().parent.parent.parent / "topics.md")
+TOPICS_DONE_FILE = str(Path(__file__).resolve().parent.parent.parent / ".topics_done")
 
 PROMPT = """You are a professional bilingual content writer specializing in English language learning.
 
@@ -55,41 +56,45 @@ def _to_slug(text: str) -> str:
     return text[:80]
 
 
-def read_next_topic() -> tuple[str, str] | None:
-    """Read the first unchecked topic from topics.md. Returns (topic_tr, topic_en) or None."""
+def read_next_topic(db: Session) -> tuple[str, str] | None:
+    """Read the first unprocessed topic from topics.md. Returns (topic_tr, topic_en) or None.
+
+    "Done" state is determined solely from the database (topic_key column).
+    topics.md is read-only; git pull never affects which topics are considered done.
+
+    Also skips [x] lines in topics.md for backward compatibility with old entries.
+    """
     print(f"[BlogGen] topics.md yolu: {TOPICS_FILE}")
     if not os.path.exists(TOPICS_FILE):
         print(f"[BlogGen] HATA: topics.md bulunamadı: {TOPICS_FILE}")
         return None
+
     with open(TOPICS_FILE, "r", encoding="utf-8") as f:
         content = f.read()
 
     for line in content.splitlines():
         stripped = line.strip()
-        # Sadece "- [ ]" ile başlayan satırları al, "- [x]" olanları atla
+        # [x] satırlarını atla (geriye dönük uyum)
+        if re.match(r"^- \[x\]", stripped):
+            continue
         match = re.match(r"^- \[ \] (.+?) \| (.+?)(?:\s+\(\d{4}-\d{2}-\d{2}\))?$", stripped)
         if match:
             topic_tr = match.group(1).strip()
             topic_en = match.group(2).strip()
+            key = f"{topic_tr} | {topic_en}"
+            exists = db.query(BlogPost).filter(BlogPost.topic_key == key).first()
+            if exists:
+                continue
             print(f"[BlogGen] Konu bulundu: {topic_tr} | {topic_en}")
             return topic_tr, topic_en
+
     print("[BlogGen] Bekleyen konu bulunamadı.")
     return None
 
 
 def mark_topic_done(topic_tr: str, topic_en: str) -> None:
-    """Mark the topic as published in topics.md."""
-    if not os.path.exists(TOPICS_FILE):
-        return
-    with open(TOPICS_FILE, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    old_line = f"- [ ] {topic_tr} | {topic_en}"
-    new_line = f"- [x] {topic_tr} | {topic_en} ({date.today().isoformat()})"
-    content = content.replace(old_line, new_line, 1)
-
-    with open(TOPICS_FILE, "w", encoding="utf-8") as f:
-        f.write(content)
+    """No-op: topic state is now tracked via topic_key in the database."""
+    pass
 
 
 class BlogGenerator:
@@ -111,19 +116,12 @@ class BlogGenerator:
         return json.loads(raw)
 
     def generate_and_save(self, db: Session) -> BlogPost | None:
-        topic = read_next_topic()
+        topic = read_next_topic(db)
         if not topic:
             return None
 
         topic_tr, topic_en = topic
-
-        # Check if slug already exists
-        existing = db.query(BlogPost).filter(
-            BlogPost.slug == _to_slug(topic_en)
-        ).first()
-        if existing:
-            mark_topic_done(topic_tr, topic_en)
-            return existing
+        topic_key = f"{topic_tr} | {topic_en}"
 
         data = self.generate(topic_tr, topic_en)
 
@@ -140,11 +138,10 @@ class BlogGenerator:
             tags=json.dumps(data.get("tags", [])),
             meta_description=data.get("meta_description"),
             meta_description_tr=data.get("meta_description_tr"),
+            topic_key=topic_key,
             published=True,
         )
         db.add(post)
         db.commit()
         db.refresh(post)
-
-        mark_topic_done(topic_tr, topic_en)
         return post
