@@ -1,7 +1,8 @@
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
-  const apiBase = (config.public.apiBase as string).replace(/\/$/, "");
-  const siteUrl = ((config.public.siteUrl as string) || apiBase).replace(/\/$/, "");
+  const apiBase = (config.public.apiBase as string || "").replace(/\/$/, "");
+  const rawSiteUrl = (config.public.siteUrl as string || "").trim();
+  const siteUrl = (rawSiteUrl || apiBase).replace(/\/$/, "");
 
   // Tüm yayınlanmış blog postlarını çek (sayfalama olmadan max 500)
   let posts: Array<{ slug: string; slug_tr?: string; updated_at?: string }> = [];

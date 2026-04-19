@@ -18,23 +18,20 @@ GRAPH_API = "https://graph.instagram.com/v21.0"
 class InstagramService:
 
     def _build_caption(self, topic: str, level: str, content: str, story_url: str) -> str:
-        sentences = [s.strip() for s in content.split(".") if s.strip()]
-        preview = ""
-        for s in sentences[:3]:
-            candidate = preview + s + ". "
-            if len(candidate) > 350:
-                break
-            preview = candidate
-
         level_label = level.upper()
-        return (
-            f"📖 {topic.title()} — {level_label}\n\n"
-            f"{preview.strip()}\n\n"
-            f"👉 Read the full story: {story_url}\n\n"
+        hashtags = (
             "#EnglishStory #LearnEnglish #EnglishReading "
             f"#{level_label}English #DailyEnglish #ESL "
             "#EnglishLearning #ReadInEnglish"
         )
+        header = f"📖 {topic.title()} — {level_label}\n\n"
+        footer = f"\n\n👉 Read more: {story_url}\n\n{hashtags}"
+
+        # Instagram caption limiti 2200 karakter
+        max_content = 2200 - len(header) - len(footer)
+        body = content if len(content) <= max_content else content[:max_content].rsplit(" ", 1)[0] + "…"
+
+        return f"{header}{body}{footer}"
 
     def _wait_until_ready(self, container_id: str, token: str, max_wait: int = 60) -> None:
         interval = 5
