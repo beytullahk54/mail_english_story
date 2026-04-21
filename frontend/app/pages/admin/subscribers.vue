@@ -93,18 +93,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
+definePageMeta({ middleware: 'admin', layout: false })
+
 const config = useRuntimeConfig()
-const router = useRouter()
+const { authHeaders, logout } = useAdmin()
 
 const subscribers = ref([])
 const total = ref(0)
 const loading = ref(false)
 const search = ref('')
-
-const token = computed(() => {
-  if (process.client) return localStorage.getItem('admin_token') || ''
-  return ''
-})
 
 const filtered = computed(() => {
   if (!search.value) return subscribers.value
@@ -126,12 +123,12 @@ const fetchSubscribers = async () => {
   loading.value = true
   try {
     const data = await $fetch(`${config.public.apiBase}/api/v1/subscribers`, {
-      headers: { 'X-Api-Token': token.value },
+      headers: authHeaders.value,
     })
     subscribers.value = data.items
     total.value = data.total
   } catch (e) {
-    if (e.status === 401) router.push('/admin/login')
+    if (e.status === 401) navigateTo('/admin/login')
   } finally {
     loading.value = false
   }
@@ -145,8 +142,8 @@ const formatDate = (d) => {
 }
 
 const handleLogout = () => {
-  localStorage.removeItem('admin_token')
-  router.push('/admin/login')
+  logout()
+  navigateTo('/admin/login')
 }
 
 useHead({ title: 'Aboneler — Admin' })

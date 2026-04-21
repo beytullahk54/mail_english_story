@@ -14,6 +14,9 @@
           <span>Blog Yönetimi</span>
         </div>
         <div class="topbar-right">
+          <NuxtLink to="/admin/subscribers" class="icon-btn" title="Aboneler">
+            <i class="pi pi-users"></i>
+          </NuxtLink>
           <NuxtLink to="/en/blog" class="icon-btn" target="_blank" title="Siteyi Görüntüle">
             <i class="pi pi-external-link"></i>
           </NuxtLink>
