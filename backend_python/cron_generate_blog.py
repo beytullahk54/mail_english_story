@@ -13,23 +13,25 @@ from modules.blog.generator import BlogGenerator, read_next_topic
 
 
 def main():
-    topic = read_next_topic()
-    if not topic:
-        print("[blog-gen] Bekleyen konu yok. topics.md dosyasına yeni konu ekleyin.")
-        return
-
-    topic_tr, topic_en = topic
-    print(f"[blog-gen] Konu: {topic_tr} | {topic_en}")
-
     db = SessionLocal()
     try:
+        topic = read_next_topic(db)
+        if not topic:
+            print("[blog-gen] Bekleyen konu yok. topics.md dosyasına yeni konu ekleyin.")
+            return
+
+        topic_tr, topic_en = topic
+        print(f"[blog-gen] Konu: {topic_tr} | {topic_en}")
+
         post = BlogGenerator().generate_and_save(db)
         if post:
             print(f"[blog-gen] ✓ Yazı yayınlandı: [{post.id}] {post.title}")
         else:
             print("[blog-gen] Yazı oluşturulamadı.")
     except Exception as e:
+        import traceback
         print(f"[blog-gen] HATA: {e}")
+        print(traceback.format_exc())
     finally:
         db.close()
 
