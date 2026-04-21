@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from database import get_db
+from database import get_db, SessionLocal
 from security import verify_token
 from .models import BlogListResponse, BlogPostCreate, BlogPostDetail, BlogPostItem
 from .service import BlogService
@@ -59,25 +59,42 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
     return {"message": "Deleted"}
 
 
-@router.post("/generate-next", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_token)])
-def generate_next_post(db: Session = Depends(get_db)):
-    """topics.md'deki bir sonraki konuyu Gemini ile üretir ve yayınlar."""
-    from .generator import BlogGenerator, read_next_topic
-    topic = read_next_topic(db)
-    if not topic:
-        return {"message": "Bekleyen konu yok. topics.md dosyasına yeni konu ekleyin."}
+def _run_blog_generation():
+    """Arka planda yeni session ile blog üretir."""
+    from .generator import BlogGenerator
+    import traceback
+    db = SessionLocal()
     try:
         post = BlogGenerator().generate_and_save(db)
-        if not post:
-            return {"message": "Oluşturulamadı."}
-        return {
-            "message": "Yazı oluşturuldu.",
-            "id": post.id,
-            "title": post.title,
-            "slug": post.slug,
-        }
+        if post:
+            print(f"[BlogGen] ✓ Arka planda yazı oluşturuldu: [{post.id}] {post.title}")
+        else:
+            print("[BlogGen] Arka planda üretim tamamlandı fakat yazı oluşturulamadı.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Üretim hatası: {str(e)}")
+        print(f"[BlogGen] Arka plan üretim hatası: {e}")
+        print(traceback.format_exc())
+    finally:
+        db.close()
+
+
+@router.post("/generate-next", status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(verify_token)])
+def generate_next_post(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """
+    topics.md'deki bir sonraki konuyu Gemini ile üretir.
+    Üretim arka planda çalışır, istek hemen 202 döner (Railway timeout'u önlemek için).
+    """
+    from .generator import read_next_topic
+    topic = read_next_topic(db)
+    if not topic:
+        return {"message": "Bekleyen konu yok. topics.md dosyasına yeni konu ekleyin.", "status": "idle"}
+
+    topic_tr, topic_en = topic
+    background_tasks.add_task(_run_blog_generation)
+    return {
+        "message": "Üretim başlatıldı, arka planda çalışıyor.",
+        "status": "started",
+        "topic": f"{topic_tr} | {topic_en}",
+    }
 
 
 @router.get("/topics/status", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_token)])

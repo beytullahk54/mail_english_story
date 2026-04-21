@@ -168,13 +168,18 @@ const generateNext = async () => {
       method: 'POST',
       headers: authHeaders.value,
     });
-    generateMsg.value = { type: 'success', text: res.message + (res.title ? ` → "${res.title}"` : '') };
-    await fetchPosts();
+    if (res.status === 'started') {
+      // Arka planda çalışıyor — 45 sn sonra listeyi yenile
+      generateMsg.value = { type: 'success', text: `⏳ Üretim başlatıldı: "${res.topic}" — liste ~45 sn sonra güncellenecek.` };
+      setTimeout(async () => { await fetchPosts(); }, 45000);
+    } else {
+      generateMsg.value = { type: 'success', text: res.message };
+    }
   } catch (e) {
     generateMsg.value = { type: 'error', text: e?.data?.detail || 'Üretim başarısız.' };
   } finally {
     generating.value = false;
-    setTimeout(() => { generateMsg.value = null; }, 6000);
+    setTimeout(() => { generateMsg.value = null; }, 50000);
   }
 };
 
