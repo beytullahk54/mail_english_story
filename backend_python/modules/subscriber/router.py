@@ -5,7 +5,8 @@ from sqlalchemy.exc import IntegrityError
 import traceback
 
 from database import get_db
-from .models import SubscriberInput
+from security import verify_token
+from .models import SubscriberInput, Subscriber
 from .service import SubscriberService
 
 router = APIRouter(tags=["subscriber"])
@@ -55,3 +56,21 @@ def subscribe(input: SubscriberInput, db: Session = Depends(get_db)):
         )
 
     return {"message": "Başarıyla kayıt olundu!"}
+
+
+@router.get("/subscribers", dependencies=[Depends(verify_token)])
+def list_subscribers(db: Session = Depends(get_db)):
+    subscribers = db.query(Subscriber).order_by(Subscriber.created_at.desc()).all()
+    return {
+        "total": len(subscribers),
+        "items": [
+            {
+                "id": s.id,
+                "email": s.email,
+                "level": s.level,
+                "language": s.language,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+            }
+            for s in subscribers
+        ],
+    }
