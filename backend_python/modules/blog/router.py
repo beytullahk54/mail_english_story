@@ -62,16 +62,20 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
 def _run_blog_generation():
     """Arka planda yeni session ile blog üretir."""
     from .generator import BlogGenerator
-    import traceback
+    import traceback, time
+    print("[BlogGen] Arka plan görevi başladı...")
+    start = time.time()
     db = SessionLocal()
     try:
         post = BlogGenerator().generate_and_save(db)
+        elapsed = round(time.time() - start, 1)
         if post:
-            print(f"[BlogGen] ✓ Arka planda yazı oluşturuldu: [{post.id}] {post.title}")
+            print(f"[BlogGen] ✓ Yazı oluşturuldu ({elapsed}s): [{post.id}] {post.title}")
         else:
-            print("[BlogGen] Arka planda üretim tamamlandı fakat yazı oluşturulamadı.")
+            print(f"[BlogGen] Bekleyen konu bulunamadı ({elapsed}s).")
     except Exception as e:
-        print(f"[BlogGen] Arka plan üretim hatası: {e}")
+        elapsed = round(time.time() - start, 1)
+        print(f"[BlogGen] HATA ({elapsed}s): {e}")
         print(traceback.format_exc())
     finally:
         db.close()

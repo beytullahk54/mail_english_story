@@ -172,17 +172,35 @@ const generateNext = async () => {
       headers: authHeaders.value,
     });
     if (res.status === 'started') {
-      // Arka planda çalışıyor — 45 sn sonra listeyi yenile
-      generateMsg.value = { type: 'success', text: `⏳ Üretim başlatıldı: "${res.topic}" — liste ~45 sn sonra güncellenecek.` };
-      setTimeout(async () => { await fetchPosts(); }, 45000);
+      const prevTotal = total.value;
+      generateMsg.value = { type: 'success', text: `⏳ Üretiliyor: "${res.topic}"` };
+
+      // Her 15 saniyede bir yeni yazı geldi mi kontrol et (max 3 dakika)
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        await fetchPosts();
+        if (total.value > prevTotal) {
+          clearInterval(poll);
+          generating.value = false;
+          generateMsg.value = { type: 'success', text: `✅ Yazı oluşturuldu: "${posts.value[0]?.title}"` };
+          setTimeout(() => { generateMsg.value = null; }, 6000);
+        } else if (attempts >= 12) {
+          clearInterval(poll);
+          generating.value = false;
+          generateMsg.value = { type: 'error', text: '⚠️ 3 dakikada tamamlanamadı. Railway loglarını kontrol edin.' };
+          setTimeout(() => { generateMsg.value = null; }, 8000);
+        }
+      }, 15000);
     } else {
       generateMsg.value = { type: 'success', text: res.message };
+      generating.value = false;
+      setTimeout(() => { generateMsg.value = null; }, 5000);
     }
   } catch (e) {
-    generateMsg.value = { type: 'error', text: e?.data?.detail || 'Üretim başarısız.' };
-  } finally {
     generating.value = false;
-    setTimeout(() => { generateMsg.value = null; }, 50000);
+    generateMsg.value = { type: 'error', text: e?.data?.detail || 'Üretim başarısız.' };
+    setTimeout(() => { generateMsg.value = null; }, 6000);
   }
 };
 
