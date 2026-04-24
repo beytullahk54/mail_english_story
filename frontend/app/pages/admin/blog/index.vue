@@ -110,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 definePageMeta({ middleware: 'admin', layout: false });
 
@@ -162,39 +162,57 @@ const doDelete = async () => {
 
 const generating = ref(false);
 const generateMsg = ref(null);
+let statusPoll = null;
+
+const stopPoll = () => {
+  if (statusPoll) { clearInterval(statusPoll); statusPoll = null; }
+};
+
+const pollGenerationStatus = () => {
+  stopPoll();
+  statusPoll = setInterval(async () => {
+    try {
+      const res = await $fetch(`${config.public.apiBase}/api/v1/blog/generation-status`, {
+        headers: authHeaders.value,
+      });
+      if (res.status === 'done') {
+        stopPoll();
+        generating.value = false;
+        await fetchPosts();
+        generateMsg.value = { type: 'success', text: `✅ Yazı oluşturuldu: "${posts.value[0]?.title}"` };
+        setTimeout(() => { generateMsg.value = null; }, 7000);
+      } else if (res.status === 'error') {
+        stopPoll();
+        generating.value = false;
+        generateMsg.value = { type: 'error', text: `❌ Hata: ${res.error || 'Bilinmeyen hata'}` };
+        setTimeout(() => { generateMsg.value = null; }, 8000);
+      } else if (res.status === 'idle') {
+        stopPoll();
+        generating.value = false;
+        generateMsg.value = { type: 'success', text: res.topic ? '✅ Tamamlandı.' : '⚠️ Bekleyen konu bulunamadı.' };
+        setTimeout(() => { generateMsg.value = null; }, 5000);
+      }
+      // status === 'pending' | 'running' → devam et
+    } catch { /* sessiz geç */ }
+  }, 3000);
+};
 
 const generateNext = async () => {
   generating.value = true;
   generateMsg.value = null;
+  stopPoll();
   try {
     const res = await $fetch(`${config.public.apiBase}/api/v1/blog/generate-next`, {
       method: 'POST',
       headers: authHeaders.value,
     });
-    if (res.status === 'started') {
-      const prevTotal = total.value;
+    if (res.status === 'started' || res.status === 'already_running') {
       generateMsg.value = { type: 'success', text: `⏳ Üretiliyor: "${res.topic}"` };
-
-      // Her 15 saniyede bir yeni yazı geldi mi kontrol et (max 3 dakika)
-      let attempts = 0;
-      const poll = setInterval(async () => {
-        attempts++;
-        await fetchPosts();
-        if (total.value > prevTotal) {
-          clearInterval(poll);
-          generating.value = false;
-          generateMsg.value = { type: 'success', text: `✅ Yazı oluşturuldu: "${posts.value[0]?.title}"` };
-          setTimeout(() => { generateMsg.value = null; }, 6000);
-        } else if (attempts >= 12) {
-          clearInterval(poll);
-          generating.value = false;
-          generateMsg.value = { type: 'error', text: '⚠️ 3 dakikada tamamlanamadı. Railway loglarını kontrol edin.' };
-          setTimeout(() => { generateMsg.value = null; }, 8000);
-        }
-      }, 15000);
+      pollGenerationStatus();
     } else {
-      generateMsg.value = { type: 'success', text: res.message };
+      // idle: konu yok
       generating.value = false;
+      generateMsg.value = { type: 'success', text: res.message };
       setTimeout(() => { generateMsg.value = null; }, 5000);
     }
   } catch (e) {
@@ -204,13 +222,32 @@ const generateNext = async () => {
   }
 };
 
+// Sayfa yüklendiğinde aktif bir iş varsa otomatik pollayalım
+const checkActiveJob = async () => {
+  try {
+    const res = await $fetch(`${config.public.apiBase}/api/v1/blog/generation-status`, {
+      headers: authHeaders.value,
+    });
+    if (res.status === 'pending' || res.status === 'running') {
+      generating.value = true;
+      generateMsg.value = { type: 'success', text: `⏳ Üretim devam ediyor: "${res.topic}"` };
+      pollGenerationStatus();
+    }
+  } catch { /* sessiz geç */ }
+};
+
 const handleLogout = () => { logout(); navigateTo('/admin/login'); };
 
 useHead({
   title: 'Blog Yönetimi — Admin',
   meta: [{ name: 'robots', content: 'noindex, nofollow, noarchive' }],
 });
-onMounted(fetchPosts);
+onMounted(async () => {
+  await fetchPosts();
+  await checkActiveJob();
+});
+
+onUnmounted(stopPoll);
 </script>
 
 <style scoped>

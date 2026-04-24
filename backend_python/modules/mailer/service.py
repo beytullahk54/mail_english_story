@@ -202,20 +202,35 @@ class MailerService:
             print(f"[Mailer] Instagram paylaşım hatası: {e}")
             print(traceback.format_exc())
 
-        # Mailler gittikten sonra topics.md'deki sıradaki konuyu blog yazısı olarak yayınla
+        # Mailler gittikten sonra topics.md'deki sıradaki konuyu arka planda üret
         try:
-            from modules.blog.generator import BlogGenerator, read_next_topic
-            topic = read_next_topic()
-            if topic:
-                print(f"[Mailer] Blog yazısı üretiliyor: {topic[1]}")
-                post = BlogGenerator().generate_and_save(self.db)
-                if post:
-                    print(f"[Mailer] Blog yazısı yayınlandı: [{post.id}] {post.title}")
-                else:
-                    print("[Mailer] Blog yazısı oluşturulamadı.")
+            from modules.blog.generator import read_next_topic
+            from modules.blog.models import BlogGenerationJob
+            from modules.blog.router import _run_blog_generation_job
+            import threading
+
+            # Zaten çalışan bir job varsa başlatma
+            active = self.db.query(BlogGenerationJob).filter(
+                BlogGenerationJob.status.in_(["pending", "running"])
+            ).first()
+
+            if active:
+                print(f"[Mailer] Blog üretimi zaten devam ediyor (job #{active.id}), atlanıyor.")
             else:
-                print("[Mailer] Bekleyen blog konusu yok (topics.md).")
+                topic = read_next_topic(self.db)
+                if topic:
+                    topic_key = f"{topic[0]} | {topic[1]}"
+                    job = BlogGenerationJob(topic=topic_key, status="pending")
+                    self.db.add(job)
+                    self.db.commit()
+                    self.db.refresh(job)
+                    threading.Thread(
+                        target=_run_blog_generation_job, args=(job.id,), daemon=False
+                    ).start()
+                    print(f"[Mailer] Blog üretimi başlatıldı (job #{job.id}): {topic_key}")
+                else:
+                    print("[Mailer] Bekleyen blog konusu yok (topics.md).")
         except Exception as e:
-            print(f"[Mailer] Blog üretim hatası (mail gönderimi etkilenmedi): {e}")
+            print(f"[Mailer] Blog üretim başlatma hatası (mail gönderimi etkilenmedi): {e}")
 
         return SendStoryResponse(sent=total_sent, failed=total_failed, recipients=all_recipients)

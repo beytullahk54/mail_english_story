@@ -15,7 +15,7 @@ from modules.story.router import router as story_router
 from modules.mailer.router import router as mailer_router
 from modules.mailer.models import MailLog  # noqa: F401 — tablonun create_all'a dahil olması için
 from modules.blog.router import router as blog_router
-from modules.blog.models import BlogPost  # noqa: F401 — create_all'a dahil olması için
+from modules.blog.models import BlogPost, BlogGenerationJob  # noqa: F401 — create_all'a dahil olması için
 from modules.admin.router import router as admin_router
 
 # Görsel klasörünü oluştur

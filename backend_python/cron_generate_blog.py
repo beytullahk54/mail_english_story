@@ -1,19 +1,28 @@
 """
 Günlük blog yazısı üretim scripti.
+
+Railway Cron kurulumu:
+  Dashboard → Deployments → Cron Jobs → "0 8 * * *" → "python cron_generate_blog.py"
+
 Crontab örneği (her gün sabah 08:00):
   0 8 * * * cd /path/to/backend_python && python cron_generate_blog.py >> /var/log/blog_gen.log 2>&1
 """
 import sys
 import os
+import time
+import traceback
 
 sys.path.insert(0, os.path.dirname(__file__))
 
 from database import SessionLocal
 from modules.blog.generator import BlogGenerator, read_next_topic
+from modules.blog.models import BlogGenerationJob
 
 
 def main():
     db = SessionLocal()
+    start = time.time()
+    job = None
     try:
         topic = read_next_topic(db)
         if not topic:
@@ -21,17 +30,44 @@ def main():
             return
 
         topic_tr, topic_en = topic
-        print(f"[blog-gen] Konu: {topic_tr} | {topic_en}")
+        topic_key = f"{topic_tr} | {topic_en}"
+        print(f"[blog-gen] Konu: {topic_key}")
+
+        job = BlogGenerationJob(topic=topic_key, status="running")
+        db.add(job)
+        db.commit()
+        db.refresh(job)
 
         post = BlogGenerator().generate_and_save(db)
+        elapsed = round(time.time() - start, 1)
+
+        db.expire(job)
+        job = db.query(BlogGenerationJob).filter(BlogGenerationJob.id == job.id).first()
+
         if post:
-            print(f"[blog-gen] ✓ Yazı yayınlandı: [{post.id}] {post.title}")
+            job.status = "done"
+            job.post_id = post.id
+            db.commit()
+            print(f"[blog-gen] ✓ Yazı yayınlandı ({elapsed}s): [{post.id}] {post.title}")
         else:
-            print("[blog-gen] Yazı oluşturulamadı.")
+            job.status = "idle"
+            db.commit()
+            print(f"[blog-gen] Yazı oluşturulamadı ({elapsed}s).")
+
     except Exception as e:
-        import traceback
-        print(f"[blog-gen] HATA: {e}")
+        elapsed = round(time.time() - start, 1)
+        print(f"[blog-gen] HATA ({elapsed}s): {e}")
         print(traceback.format_exc())
+        try:
+            if job:
+                db.rollback()
+                job = db.query(BlogGenerationJob).filter(BlogGenerationJob.id == job.id).first()
+                if job:
+                    job.status = "error"
+                    job.error = str(e)[:500]
+                    db.commit()
+        except Exception as inner:
+            print(f"[blog-gen] Job güncelleme hatası: {inner}")
     finally:
         db.close()
 
