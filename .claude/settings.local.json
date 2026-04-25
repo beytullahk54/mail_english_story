@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(python3 -c \"import py_compile; py_compile.compile\\('backend_python/modules/mailer/service.py', doraise=True\\); print\\('✓ OK'\\)\")",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -c \"import py_compile; py_compile.compile\\('backend_python/modules/book_summary/service.py', doraise=True\\); print\\('✓ OK'\\)\")"
     ]
   }
 }
