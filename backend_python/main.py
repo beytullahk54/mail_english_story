@@ -17,6 +17,8 @@ from modules.mailer.models import MailLog  # noqa: F401 — tablonun create_all'
 from modules.blog.router import router as blog_router
 from modules.blog.models import BlogPost, BlogGenerationJob  # noqa: F401 — create_all'a dahil olması için
 from modules.admin.router import router as admin_router
+from modules.book_summary.router import router as book_summary_router
+from modules.book_summary.models import PsychologyBook  # noqa: F401 — create_all'a dahil olması için
 
 # Görsel klasörünü oluştur
 IMAGES_DIR = os.path.join(os.path.dirname(__file__), "static", "images")
@@ -119,6 +121,7 @@ app.include_router(story_router, prefix="/api/v1")
 app.include_router(mailer_router, prefix="/api/v1")
 app.include_router(blog_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
+app.include_router(book_summary_router, prefix="/api/v1")
 
 
 @app.get("/health")

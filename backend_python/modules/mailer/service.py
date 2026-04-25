@@ -233,4 +233,11 @@ class MailerService:
         except Exception as e:
             print(f"[Mailer] Blog üretim başlatma hatası (mail gönderimi etkilenmedi): {e}")
 
+        # Günlük psikoloji kitabı özetini admin'e gönder
+        try:
+            from modules.book_summary.service import BookSummaryService
+            BookSummaryService().send_daily(self.db)
+        except Exception as e:
+            print(f"[Mailer] Kitap özeti gönderilemedi (mail gönderimi etkilenmedi): {e}")
+
         return SendStoryResponse(sent=total_sent, failed=total_failed, recipients=all_recipients)

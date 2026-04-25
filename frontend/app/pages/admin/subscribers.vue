@@ -17,6 +17,9 @@
           <NuxtLink to="/admin/blog" class="icon-btn" title="Blog Yönetimi">
             <i class="pi pi-pencil"></i>
           </NuxtLink>
+          <NuxtLink to="/admin/books" class="icon-btn" title="Kitap Özetleri">
+            <i class="pi pi-book"></i>
+          </NuxtLink>
           <button class="icon-btn danger" @click="handleLogout" title="Çıkış">
             <i class="pi pi-sign-out"></i>
           </button>
