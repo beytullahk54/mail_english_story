@@ -524,7 +524,7 @@ const subscribe = async () => {
 }
 
 :deep(.level-select) {
-  width: 140px;
+  flex: 1;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.2);
