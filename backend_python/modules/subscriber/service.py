@@ -23,7 +23,8 @@ class SubscriberService:
         subscriber = Subscriber(
             email=input.email,
             level=input.level,
-            language=input.language
+            language=input.language,
+            genre=input.genre or "travel",
         )
         self.db.add(subscriber)
         self.db.commit()

@@ -13,6 +13,7 @@ class Subscriber(Base):
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     level: Mapped[str] = mapped_column(String(10), nullable=True)
     language: Mapped[str] = mapped_column(String(20), nullable=True, default="English")
+    genre: Mapped[str] = mapped_column(String(50), nullable=True, default="travel")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -22,3 +23,4 @@ class SubscriberInput(BaseModel):
     email: str
     level: str = ""
     language: str = "English"
+    genre: str = "travel"

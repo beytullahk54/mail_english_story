@@ -79,78 +79,83 @@ class MailerService:
         except Exception as e:
             print(f"[Admin Alert] Gönderilemedi: {e}")
 
-    def _get_active_levels(self, language_filter: str | None = None) -> list[str]:
-        query = self.db.query(Subscriber.level).distinct()
+    def _get_active_combos(self, language_filter: str | None = None) -> list[tuple[str, str]]:
+        """DB'deki aktif (level, genre) kombinasyonlarını döner."""
+        query = self.db.query(Subscriber.level, Subscriber.genre).distinct()
         if language_filter and language_filter.lower() not in ["string", ""]:
             query = query.filter(Subscriber.language == language_filter)
-        return [row[0] for row in query.all() if row[0] and row[0].strip()]
+        combos = []
+        for level, genre in query.all():
+            if level and level.strip():
+                combos.append((level.strip(), (genre or "travel").strip()))
+        return combos
+
+    def _get_subscribers_by_combo(self, level: str, genre: str, language_filter: str | None = None) -> list[str]:
+        query = self.db.query(Subscriber.email).filter(
+            Subscriber.level == level,
+            Subscriber.genre == genre,
+        )
+        if language_filter and language_filter.lower() not in ["string", ""]:
+            query = query.filter(Subscriber.language == language_filter)
+        emails = []
+        for row in query.all():
+            target = row[0] if isinstance(row, (tuple, list)) else row
+            clean = str(target).strip().strip("()',")
+            if clean:
+                emails.append(clean)
+        return emails
 
     def send_story(self, request: SendStoryRequest):
-        current_topic = request.topic.strip() if request.topic else "General"
-        if current_topic.lower() == "string":
-            current_topic = "General"
+        combos = self._get_active_combos(request.language_filter)
+        print(f"[Mailer] Aktif (seviye, tür) kombinasyonları: {combos}")
 
-        # Hangi seviyelere göndereceğimizi belirle
-        level_filter = request.level_filter
-        if level_filter and level_filter.lower() not in ["string", ""]:
-            levels = [level_filter.lower().strip()]
-        else:
-            levels = self._get_active_levels(request.language_filter)
-
-        print(f"[Mailer] Gönderilecek seviyeler: {levels}")
-
-        subject = f"📖 Daily Story: {current_topic}"
         total_sent, total_failed, all_recipients = 0, 0, []
+        last_topic = "General"
 
-        for level in levels:
-            print(f"\n[Mailer] {level.upper()} seviyesi için hikaye üretiliyor...")
+        for level, genre in combos:
+            topic = genre  # genre doğrudan hikaye konusu olarak kullanılır
+            last_topic = topic
+            print(f"\n[Mailer] {level.upper()} / {genre} için hikaye üretiliyor...")
 
-            # Her seviye için ayrı hikaye üret
-            story_req = StoryRequest(
-                topic=current_topic,
-                level=level,
-                language="English",
-                word_count=200
-            )
+            story_req = StoryRequest(topic=topic, level=level, language="English", word_count=200)
             try:
                 generated = self.story_service.generate_story(story_req)
                 level_story = generated.story
             except Exception as e:
                 error_msg = str(e).lower()
-                print(f"[Mailer] {level} hikayesi üretilemedi: {e}")
+                print(f"[Mailer] {level}/{genre} hikayesi üretilemedi: {e}")
                 if any(k in error_msg for k in ["quota", "rate", "limit", "429", "resource_exhausted"]):
                     self._send_admin_alert(
                         subject="⚠️ Gemini API Limiti Doldu",
                         body=(
-                            f"Gemini API kotası aşıldı, hikaye üretilemedi.<br><br>"
+                            f"Gemini API kotası aşıldı.<br><br>"
                             f"<b>Seviye:</b> {level.upper()}<br>"
-                            f"<b>Konu:</b> {current_topic}<br><br>"
+                            f"<b>Tür:</b> {genre}<br>"
                             f"<b>Hata:</b> {e}"
                         )
                     )
-                total_failed += len(self._get_subscribers(level, request.language_filter))
+                total_failed += len(self._get_subscribers_by_combo(level, genre, request.language_filter))
                 continue
 
-            # Veritabanına kaydet ve ID al
             story_url = None
             try:
-                db_story = Story(topic=current_topic, level=level, language="English", content=level_story)
+                db_story = Story(topic=topic, level=level, language="English", content=level_story)
                 self.db.add(db_story)
                 self.db.commit()
                 self.db.refresh(db_story)
                 story_url = f"{config.APP_BASE_URL}/stories/{db_story.id}"
             except Exception as e:
-                print(f"[Mailer] {level} hikayesi kaydedilemedi: {e}")
+                print(f"[Mailer] {level}/{genre} hikayesi kaydedilemedi: {e}")
                 self.db.rollback()
 
-            # O seviyedeki abonelere gönder
-            emails = self._get_subscribers(level, request.language_filter)
-            print(f"[Mailer] {level.upper()} için {len(emails)} abone bulundu.")
+            emails = self._get_subscribers_by_combo(level, genre, request.language_filter)
+            subject = f"📖 Daily Story: {topic.title()}"
+            print(f"[Mailer] {level.upper()}/{genre} için {len(emails)} abone bulundu.")
 
             for email in emails:
                 try:
                     unsubscribe_url = f"{config.APP_BASE_URL}/api/v1/unsubscribe?email={quote(email)}"
-                    html = build_email_html(current_topic, level, level_story, unsubscribe_url, story_url)
+                    html = build_email_html(topic, level, level_story, unsubscribe_url, story_url)
                     self._send_one(email, subject, html)
                     total_sent += 1
                     all_recipients.append(email)
@@ -166,7 +171,7 @@ class MailerService:
         # Veritabanına log kaydet
         try:
             log = MailLog(
-                topic=current_topic,
+                topic=", ".join({g for _, g in combos}) or last_topic,
                 total_sent=total_sent,
                 total_failed=total_failed,
                 recipients=", ".join(all_recipients) if all_recipients else None,

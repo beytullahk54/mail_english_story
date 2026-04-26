@@ -46,6 +46,10 @@ def run_migrations():
             "ALTER TABLE blog_posts "
             "ADD COLUMN IF NOT EXISTS topic_key VARCHAR(500);"
         ))
+        conn.execute(text(
+            "ALTER TABLE subscribers "
+            "ADD COLUMN IF NOT EXISTS genre VARCHAR(50) DEFAULT 'travel';"
+        ))
         conn.commit()
         print("[Migration] Kolonlar kontrol edildi / eklendi.")
 
