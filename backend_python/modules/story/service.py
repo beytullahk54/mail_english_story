@@ -366,6 +366,56 @@ class StoryService:
         print(f"[StoryService] Dikey Story görseli kaydedildi: {filename}")
         return f"static/images/{filename}"
 
+    def generate_cover_image_bytes(
+        self,
+        story_id: int,
+        topic: str,
+        content: str,
+        vertical: bool = False,
+    ) -> bytes:
+        """
+        Hikaye kapak görseli üretir: Pollinations'tan çeker, text overlay ekler.
+        Diske kaydetmez — saf bytes döner (Railway ephemeral filesystem safe).
+        vertical=True → 9:16 (800x1422 Instagram Story)
+        vertical=False → 4:5 (800x1000 Instagram Feed)
+        """
+        import requests as http_requests
+        from urllib.parse import quote
+
+        width = 800
+        height = 1422 if vertical else 1000
+        seed_offset = 999 if vertical else 0
+
+        paragraphs = [p.strip() for p in content.strip().split("\n\n") if p.strip()]
+        story_context = " ".join(paragraphs[:2])[:400]
+        prompt = (
+            f"watercolor illustration: {story_context}. "
+            f"Topic: {topic}. "
+            f"Storytelling atmosphere, warm vivid colors, no text, no words, no letters"
+        )
+        url = (
+            f"https://image.pollinations.ai/prompt/{quote(prompt)}"
+            f"?width={width}&height={height}&nologo=true&seed={story_id + seed_offset}"
+        )
+        response = http_requests.get(url, timeout=60)
+        if response.status_code != 200:
+            raise Exception(f"Görsel servisi hata döndürdü: {response.status_code}")
+        image_bytes = response.content
+
+        # İlk cümleyi overlay olarak yaz
+        sentences = [s.strip() for s in content.split(".") if s.strip()]
+        overlay_text = sentences[0] + "." if sentences else ""
+        try:
+            image_bytes = self._add_text_overlay(image_bytes, overlay_text, slide_label=f"#{story_id}")
+        except Exception as e:
+            print(f"[StoryService] Cover overlay hatası: {e}")
+
+        # JPEG encode
+        img_obj = Image.open(BytesIO(image_bytes)).convert("RGB")
+        jpeg_buf = BytesIO()
+        img_obj.save(jpeg_buf, format="JPEG", quality=92)
+        return jpeg_buf.getvalue()
+
     def get_random_today_story(self, db: Session) -> StoryItem | None:
         """Bugüne ait a1/a2/b1/b2 seviyeli hikayelerden rastgele birini döner."""
         import random

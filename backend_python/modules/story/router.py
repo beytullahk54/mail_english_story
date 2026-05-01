@@ -30,6 +30,36 @@ def increment_view(story_id: int, db: Session = Depends(get_db)):
     return {"view_count": view_count}
 
 
+@router.get("/{story_id}/cover")
+def get_story_cover(
+    story_id: int,
+    vertical: bool = Query(default=False),
+    db: Session = Depends(get_db),
+):
+    """
+    Hikaye kapak görseli (text overlay dahil). Diske kaydetmez — her seferinde üretir.
+    ?vertical=true → 9:16 (Instagram Story), varsayılan → 4:5 (Instagram Feed)
+    Instagram image_url olarak kullanılmak üzere tasarlandı.
+    """
+    service = StoryService()
+    story = service.get_story_by_id(db, story_id)
+    if not story:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hikaye bulunamadı")
+    try:
+        image_bytes = service.generate_cover_image_bytes(
+            story_id=story_id,
+            topic=story.topic,
+            content=story.content,
+            vertical=vertical,
+        )
+        return Response(content=image_bytes, media_type="image/jpeg")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Kapak görseli üretilemedi: {str(e)}",
+        )
+
+
 @router.get("/{story_id}/image")
 def get_story_image(story_id: int, db: Session = Depends(get_db)):
     service = StoryService()
