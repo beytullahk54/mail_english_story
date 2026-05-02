@@ -189,9 +189,6 @@ class MailerService:
             print("[Mailer] Tüm mailler gönderildi, Instagram paylaşımı başlatılıyor...")
             story = self.story_service.get_random_today_story(self.db)
             if story:
-                self.story_service.get_or_generate_story_image(
-                    self.db, story.id, story.topic, story.content
-                )
                 instagram = InstagramService()
                 result = instagram.post(
                     story_id=story.id,
