@@ -1,8 +1,11 @@
-import requests
 import json
+import random
+from pathlib import Path
 from urllib.parse import quote
+
+import requests
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, date
 
 from config import config
 from modules.subscriber.models import Subscriber
@@ -10,6 +13,8 @@ from .models import SendStoryRequest, SendStoryResponse, MailLog
 from .template import build_email_html
 from modules.story.service import StoryService
 from modules.story.models import StoryRequest, Story
+
+TOPICS_PATH = Path(__file__).parent / "topics.json"
 
 
 class MailerService:
@@ -79,22 +84,19 @@ class MailerService:
         except Exception as e:
             print(f"[Admin Alert] Gönderilemedi: {e}")
 
-    def _get_active_combos(self, language_filter: str | None = None) -> list[tuple[str, str]]:
-        """DB'deki aktif (level, genre) kombinasyonlarını döner."""
-        query = self.db.query(Subscriber.level, Subscriber.genre).distinct()
+    def _get_active_levels(self, language_filter: str | None = None) -> list[str]:
+        """DB'deki aktif distinct seviyeleri döner."""
+        query = self.db.query(Subscriber.level).distinct()
         if language_filter and language_filter.lower() not in ["string", ""]:
             query = query.filter(Subscriber.language == language_filter)
-        combos = []
-        for level, genre in query.all():
+        levels = []
+        for (level,) in query.all():
             if level and level.strip():
-                combos.append((level.strip(), (genre or "travel").strip()))
-        return combos
+                levels.append(level.strip())
+        return levels
 
-    def _get_subscribers_by_combo(self, level: str, genre: str, language_filter: str | None = None) -> list[str]:
-        query = self.db.query(Subscriber.email).filter(
-            Subscriber.level == level,
-            Subscriber.genre == genre,
-        )
+    def _get_subscribers_by_level(self, level: str, language_filter: str | None = None) -> list[str]:
+        query = self.db.query(Subscriber.email).filter(Subscriber.level == level)
         if language_filter and language_filter.lower() not in ["string", ""]:
             query = query.filter(Subscriber.language == language_filter)
         emails = []
@@ -105,17 +107,23 @@ class MailerService:
                 emails.append(clean)
         return emails
 
+    def _pick_daily_topic(self) -> str:
+        # Her gün için tek bir konu; aynı gün içinde retry edilse de aynı topic seçilir
+        with open(TOPICS_PATH, "r", encoding="utf-8") as f:
+            topics = json.load(f)
+        seed = int(date.today().strftime("%Y%m%d"))
+        return random.Random(seed).choice(topics)
+
     def send_story(self, request: SendStoryRequest):
-        combos = self._get_active_combos(request.language_filter)
-        print(f"[Mailer] Aktif (seviye, tür) kombinasyonları: {combos}")
+        topic = self._pick_daily_topic()
+        levels = self._get_active_levels(request.language_filter)
+        print(f"[Mailer] Günün konusu: {topic}")
+        print(f"[Mailer] Aktif seviyeler: {levels}")
 
         total_sent, total_failed, all_recipients = 0, 0, []
-        last_topic = "General"
 
-        for level, genre in combos:
-            topic = genre  # genre doğrudan hikaye konusu olarak kullanılır
-            last_topic = topic
-            print(f"\n[Mailer] {level.upper()} / {genre} için hikaye üretiliyor...")
+        for level in levels:
+            print(f"\n[Mailer] {level.upper()} / {topic} için hikaye üretiliyor...")
 
             story_req = StoryRequest(topic=topic, level=level, language="English", word_count=200)
             try:
@@ -123,18 +131,18 @@ class MailerService:
                 level_story = generated.story
             except Exception as e:
                 error_msg = str(e).lower()
-                print(f"[Mailer] {level}/{genre} hikayesi üretilemedi: {e}")
+                print(f"[Mailer] {level}/{topic} hikayesi üretilemedi: {e}")
                 if any(k in error_msg for k in ["quota", "rate", "limit", "429", "resource_exhausted"]):
                     self._send_admin_alert(
                         subject="⚠️ Gemini API Limiti Doldu",
                         body=(
                             f"Gemini API kotası aşıldı.<br><br>"
                             f"<b>Seviye:</b> {level.upper()}<br>"
-                            f"<b>Tür:</b> {genre}<br>"
+                            f"<b>Konu:</b> {topic}<br>"
                             f"<b>Hata:</b> {e}"
                         )
                     )
-                total_failed += len(self._get_subscribers_by_combo(level, genre, request.language_filter))
+                total_failed += len(self._get_subscribers_by_level(level, request.language_filter))
                 continue
 
             story_url = None
@@ -145,12 +153,12 @@ class MailerService:
                 self.db.refresh(db_story)
                 story_url = f"{config.APP_BASE_URL}/stories/{db_story.id}"
             except Exception as e:
-                print(f"[Mailer] {level}/{genre} hikayesi kaydedilemedi: {e}")
+                print(f"[Mailer] {level}/{topic} hikayesi kaydedilemedi: {e}")
                 self.db.rollback()
 
-            emails = self._get_subscribers_by_combo(level, genre, request.language_filter)
+            emails = self._get_subscribers_by_level(level, request.language_filter)
             subject = f"📖 Daily Story: {topic.title()}"
-            print(f"[Mailer] {level.upper()}/{genre} için {len(emails)} abone bulundu.")
+            print(f"[Mailer] {level.upper()}/{topic} için {len(emails)} abone bulundu.")
 
             for email in emails:
                 try:
@@ -171,7 +179,7 @@ class MailerService:
         # Veritabanına log kaydet
         try:
             log = MailLog(
-                topic=", ".join({g for _, g in combos}) or last_topic,
+                topic=topic,
                 total_sent=total_sent,
                 total_failed=total_failed,
                 recipients=", ".join(all_recipients) if all_recipients else None,

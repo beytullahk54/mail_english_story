@@ -45,14 +45,6 @@
               :placeholder="t('levelPlaceholder')"
               class="level-select"
             />
-            <Select
-              v-model="selectedGenre"
-              :options="genres"
-              optionLabel="label"
-              optionValue="value"
-              :placeholder="t('genrePlaceholder')"
-              class="level-select"
-            />
           </div>
           <div class="input-group">
             <div class="email-input-wrapper">
@@ -123,11 +115,6 @@ const displayLanguages = ref([
 ]);
 const selectedLevel = ref(null);
 const levels = ref(['A1', 'A2', 'B1', 'B2']);
-const selectedGenre = ref(null);
-const genres = ref([
-  { label: '✈️ Travel', value: 'travel' },
-  { label: '🤝 Meeting', value: 'meeting' },
-]);
 const loading = ref(false);
 const toast = useToast();
 const config = useRuntimeConfig();
@@ -138,7 +125,6 @@ const translations = {
     subtitle: 'İngilizce okuma pratiğinizi eğlenceli hale getirin. Abone olun ve her gün özenle seçilmiş, seviyenize uygun İngilizce kısa hikayeler e-posta kutunuza gelsin.',
     button: 'Hemen Abone Ol',
     levelPlaceholder: 'Seviye',
-    genrePlaceholder: 'Hikaye Türü',
     emailPlaceholder: 'E-posta adresiniz...',
     feature1: 'Tamamen Ücretsiz',
     feature2: 'Kelime Dağarcığı Geliştirme',
@@ -156,7 +142,6 @@ const translations = {
     subtitle: 'Make your English reading practice fun. Subscribe and get carefully selected short stories suited to your level in your inbox every day.',
     button: 'Subscribe Now',
     levelPlaceholder: 'Level',
-    genrePlaceholder: 'Story Genre',
     emailPlaceholder: 'Your email address...',
     feature1: 'Completely Free',
     feature2: 'Vocabulary Building',
@@ -174,7 +159,6 @@ const translations = {
     subtitle: 'Machen Sie Ihr Deutsch-Lesetraining zum Vergnügen. Abonnieren Sie und erhalten Sie jeden Tag sorgfältig ausgewählte Kurzgeschichten in Ihren Posteingang.',
     button: 'Jetzt Abonnieren',
     levelPlaceholder: 'Niveau',
-    genrePlaceholder: 'Geschichte Genre',
     emailPlaceholder: 'Ihre E-Mail-Adresse...',
     feature1: 'Völlig Kostenlos',
     feature2: 'Wortschatzaufbau',
@@ -192,7 +176,6 @@ const translations = {
     subtitle: 'Haz que tu práctica de lectura en español sea divertida. Suscríbete y recibe cada día historias cortas cuidadosamente seleccionadas en tu bandeja de entrada.',
     button: 'Suscríbete Ahora',
     levelPlaceholder: 'Nivel',
-    genrePlaceholder: 'Género',
     emailPlaceholder: 'Tu correo electrónico...',
     feature1: 'Completamente Gratis',
     feature2: 'Construcción de Vocabulario',
@@ -210,7 +193,6 @@ const translations = {
     subtitle: 'Jadikan amalan membaca Bahasa Inggeris anda menyeronokkan. Langgan dan dapatkan cerita pendek yang dipilih khas sesuai dengan tahap anda setiap hari.',
     button: 'Langgan Sekarang',
     levelPlaceholder: 'Tahap',
-    genrePlaceholder: 'Genre',
     emailPlaceholder: 'Alamat e-mel anda...',
     feature1: 'Percuma Sepenuhnya',
     feature2: 'Membina Perbendaharaan Kata',
@@ -228,7 +210,6 @@ const translations = {
     subtitle: 'Gör din engelska lästräning rolig. Prenumerera och få noggrant utvalda noveller som passar din nivå i din inkorg varje dag.',
     button: 'Prenumerera nu',
     levelPlaceholder: 'Nivå',
-    genrePlaceholder: 'Genre',
     emailPlaceholder: 'Din e-postadress...',
     feature1: 'Helt gratis',
     feature2: 'Ordförrådsbyggande',
@@ -246,7 +227,6 @@ const translations = {
     subtitle: 'Maak je Engelse leesvaardigheid leuk. Abonneer je en ontvang elke dag zorgvuldig geselecteerde korte verhalen die passen bij jouw niveau in je inbox.',
     button: 'Nu abonneren',
     levelPlaceholder: 'Niveau',
-    genrePlaceholder: 'Genre',
     emailPlaceholder: 'Uw e-mailadres...',
     feature1: 'Helemaal gratis',
     feature2: 'Woordenschat opbouwen',
@@ -264,7 +244,6 @@ const translations = {
     subtitle: 'Gør din engelske læsetræning sjov. Tilmeld dig og få omhyggeligt udvalgte noveller, der passer til dit niveau, i din indbakke hver dag.',
     button: 'Tilmeld dig nu',
     levelPlaceholder: 'Niveau',
-    genrePlaceholder: 'Genre',
     emailPlaceholder: 'Din e-mailadresse...',
     feature1: 'Helt gratis',
     feature2: 'Ordforrådsopbygning',
@@ -329,7 +308,6 @@ const subscribe = async () => {
         email: email.value,
         level: selectedLevel.value || 'None',
         language: selectedLanguage.value,
-        genre: selectedGenre.value || 'travel',
       }
     });
 
@@ -343,7 +321,6 @@ const subscribe = async () => {
 
     email.value = '';
     selectedLevel.value = null;
-    selectedGenre.value = null;
   } catch (error) {
     loading.value = false;
     toast.add({
