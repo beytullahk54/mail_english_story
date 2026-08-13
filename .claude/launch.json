@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "iacus",
+      "runtimeExecutable": "php",
+      "runtimeArgs": ["/Volumes/Kodlooper/kodlooperYazilim/htdocs/iacus/iacus/artisan", "serve", "--port=8099"],
+      "port": 8099
+    },
+    {
+      "name": "mail-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Volumes/Kodlooper/kodlooperYazilim/htdocs/mail_english_story/frontend", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}

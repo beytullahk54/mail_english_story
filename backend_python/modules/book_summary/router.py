@@ -49,6 +49,19 @@ def delete_book(book_id: int, db: Session = Depends(get_db)):
     return {"message": "Silindi"}
 
 
+@router.post("/suggest-ai", dependencies=[Depends(verify_token)])
+def suggest_books_ai(db: Session = Depends(get_db)):
+    try:
+        added = BookSummaryService().suggest_books_ai(db, count=10)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "added": len(added),
+        "items": [{"id": b.id, "title": b.title, "author": b.author} for b in added],
+        "message": f"{len(added)} kitap AI ile eklendi." if added else "AI yeni kitap önermedi.",
+    }
+
+
 @router.post("/seed", dependencies=[Depends(verify_token)])
 def seed_books(db: Session = Depends(get_db)):
     count = BookSummaryService().seed_books(db)

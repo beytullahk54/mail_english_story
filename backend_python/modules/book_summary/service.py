@@ -1,3 +1,5 @@
+import json
+import re
 import requests
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
@@ -49,6 +51,48 @@ class BookSummaryService:
             db.add(PsychologyBook(title=title, author=author))
         db.commit()
         return len(SEED_BOOKS)
+
+    def suggest_books_ai(self, db: Session, count: int = 10) -> list[PsychologyBook]:
+        """Gemini'ye mevcut listede olmayan yeni psikoloji kitapları önerttirir ve ekler."""
+        existing = [f"{b.title} — {b.author}" for b in db.query(PsychologyBook).all()]
+        existing_text = "\n".join(f"- {e}" for e in existing) if existing else "(liste boş)"
+
+        prompt = f"""Sen bir psikoloji ve kişisel gelişim kitapları uzmanısın. Aşağıda zaten listede olan kitaplar var, bunları TEKRAR ÖNERME:
+
+{existing_text}
+
+Bu listede OLMAYAN, tanınmış {count} adet psikoloji/kişisel gelişim/nörobilim kitabı öner.
+Sadece geçerli bir JSON array döndür, başka hiçbir açıklama yazma. Format:
+[{{"title": "Kitap Adı (Türkçe varsa Türkçe adı)", "author": "Yazar Adı"}}, ...]"""
+
+        response = self.client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        text = response.text.strip()
+        match = re.search(r"\[.*\]", text, re.DOTALL)
+        if not match:
+            raise ValueError("AI yanıtı JSON formatında değil")
+        items = json.loads(match.group(0))
+
+        existing_titles = {b.title.strip().lower() for b in db.query(PsychologyBook).all()}
+        added = []
+        for item in items:
+            title = (item.get("title") or "").strip()
+            author = (item.get("author") or "").strip()
+            if not title or not author:
+                continue
+            if title.lower() in existing_titles:
+                continue
+            book = PsychologyBook(title=title, author=author)
+            db.add(book)
+            added.append(book)
+            existing_titles.add(title.lower())
+
+        db.commit()
+        for b in added:
+            db.refresh(b)
+        return added
 
     def get_next_book(self, db: Session) -> PsychologyBook | None:
         """En uzun süredir gönderilmemiş kitabı seç. Liste bitince başa döner."""

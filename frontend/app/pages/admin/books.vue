@@ -49,6 +49,24 @@
           {{ sendResult.text }}
         </div>
 
+        <!-- Add book -->
+        <div class="add-card glass-effect">
+          <form class="add-form" @submit.prevent="addBook">
+            <input v-model="newTitle" type="text" placeholder="Kitap adı" class="add-input" required />
+            <input v-model="newAuthor" type="text" placeholder="Yazar" class="add-input" required />
+            <button class="add-btn" type="submit" :disabled="adding">
+              <i v-if="adding" class="pi pi-spinner pi-spin"></i>
+              <i v-else class="pi pi-plus"></i>
+              {{ adding ? 'Ekleniyor...' : 'Ekle' }}
+            </button>
+          </form>
+          <button class="ai-btn" @click="suggestAi" :disabled="aiSuggesting">
+            <i v-if="aiSuggesting" class="pi pi-spinner pi-spin"></i>
+            <i v-else class="pi pi-sparkles"></i>
+            {{ aiSuggesting ? 'AI Öneriyor...' : 'AI ile 10 Kitap Ekle' }}
+          </button>
+        </div>
+
         <!-- Book list -->
         <div class="section-header">
           <h2>Kitap Listesi <span class="count">{{ books.length }}</span></h2>
@@ -111,6 +129,10 @@ const books = ref([])
 const loading = ref(false)
 const sending = ref(false)
 const seeding = ref(false)
+const adding = ref(false)
+const aiSuggesting = ref(false)
+const newTitle = ref('')
+const newAuthor = ref('')
 const sendResult = ref(null)
 const adminEmail = ref('admin')
 
@@ -162,6 +184,45 @@ const seedBooks = async () => {
     setTimeout(() => { sendResult.value = null }, 5000)
   } finally {
     seeding.value = false
+  }
+}
+
+const addBook = async () => {
+  adding.value = true
+  try {
+    await $fetch(`${config.public.apiBase}/api/v1/books`, {
+      method: 'POST',
+      headers: authHeaders.value,
+      body: { title: newTitle.value.trim(), author: newAuthor.value.trim() },
+    })
+    newTitle.value = ''
+    newAuthor.value = ''
+    await fetchBooks()
+    sendResult.value = { type: 'success', text: '✅ Kitap eklendi.' }
+    setTimeout(() => { sendResult.value = null }, 5000)
+  } catch (e) {
+    sendResult.value = { type: 'error', text: `❌ ${e?.data?.detail || 'Eklenemedi'}` }
+    setTimeout(() => { sendResult.value = null }, 5000)
+  } finally {
+    adding.value = false
+  }
+}
+
+const suggestAi = async () => {
+  aiSuggesting.value = true
+  try {
+    const res = await $fetch(`${config.public.apiBase}/api/v1/books/suggest-ai`, {
+      method: 'POST',
+      headers: authHeaders.value,
+    })
+    await fetchBooks()
+    sendResult.value = { type: 'success', text: `✅ ${res.message}` }
+    setTimeout(() => { sendResult.value = null }, 6000)
+  } catch (e) {
+    sendResult.value = { type: 'error', text: `❌ ${e?.data?.detail || 'AI önerisi alınamadı'}` }
+    setTimeout(() => { sendResult.value = null }, 6000)
+  } finally {
+    aiSuggesting.value = false
   }
 }
 
@@ -221,6 +282,19 @@ onMounted(fetchBooks)
 .result-msg.success { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: #34d399; }
 .result-msg.error   { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #ef4444; }
 .result-msg.warn    { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); color: #fbbf24; }
+
+/* Add card */
+.add-card { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.5rem; border-radius: 14px; flex-wrap: wrap; }
+.add-form { display: flex; align-items: center; gap: 0.6rem; flex: 1; flex-wrap: wrap; min-width: 260px; }
+.add-input { flex: 1; min-width: 140px; padding: 0.6rem 0.9rem; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: var(--text-main, #fff); font-size: 0.88rem; font-family: inherit; }
+.add-input::placeholder { color: var(--text-muted); }
+.add-input:focus { outline: none; border-color: #818cf8; }
+.add-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.1rem; border-radius: 8px; background: rgba(129,140,248,0.15); border: 1px solid rgba(129,140,248,0.3); color: #818cf8; font-weight: 600; font-size: 0.85rem; font-family: inherit; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.add-btn:hover:not(:disabled) { background: rgba(129,140,248,0.25); }
+.add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ai-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.2rem; border-radius: 10px; background: linear-gradient(135deg,#6366f1,#8b5cf6); border: none; color: white; font-weight: 600; font-size: 0.85rem; font-family: inherit; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; }
+.ai-btn:hover:not(:disabled) { opacity: 0.85; }
+.ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Section header */
 .section-header { display: flex; align-items: center; justify-content: space-between; }
